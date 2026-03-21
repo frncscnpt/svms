@@ -63,6 +63,9 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
                 <a href="<?= BASE_PATH ?>/admin/violations.php" class="nav-link-item <?= $currentPage === 'violations' ? 'active' : '' ?>">
                     <i class="bi bi-exclamation-triangle-fill"></i> <span>Violations</span>
                 </a>
+                <a href="<?= BASE_PATH ?>/admin/uniform_passes.php" class="nav-link-item <?= $currentPage === 'uniform_passes' ? 'active' : '' ?>">
+                    <i class="bi bi-card-checklist"></i> <span>Uniform Passes</span>
+                </a>
                 <a href="<?= BASE_PATH ?>/admin/reports.php" class="nav-link-item <?= $currentPage === 'reports' ? 'active' : '' ?>">
                     <i class="bi bi-file-earmark-bar-graph-fill"></i> <span>Reports</span>
                 </a>
@@ -82,6 +85,9 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
             </div>
             <div class="nav-section">
                 <div class="nav-section-title">Records</div>
+                <a href="<?= BASE_PATH ?>/discipline/uniform_passes.php" class="nav-link-item <?= $currentPage === 'uniform_passes' ? 'active' : '' ?>">
+                    <i class="bi bi-card-checklist"></i> <span>Uniform Passes</span>
+                </a>
                 <a href="<?= BASE_PATH ?>/discipline/history.php" class="nav-link-item <?= $currentPage === 'history' ? 'active' : '' ?>">
                     <i class="bi bi-clock-history"></i> <span>History</span>
                 </a>
@@ -113,6 +119,9 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
                 </a>
                 <a href="<?= BASE_PATH ?>/student/violations.php" class="nav-link-item <?= $currentPage === 'violations' ? 'active' : '' ?>">
                     <i class="bi bi-exclamation-triangle-fill"></i> <span>My Violations</span>
+                </a>
+                <a href="<?= BASE_PATH ?>/student/uniform_pass.php" class="nav-link-item <?= $currentPage === 'uniform_pass' ? 'active' : '' ?>">
+                    <i class="bi bi-card-checklist"></i> <span>Uniform Pass</span>
                 </a>
             </div>
             <?php endif; ?>

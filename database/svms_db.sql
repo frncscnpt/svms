@@ -158,6 +158,22 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 ) ENGINE=InnoDB;
 
 -- ============================================
+-- UNIFORM PASSES TABLE
+-- ============================================
+CREATE TABLE uniform_passes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    pass_code VARCHAR(100) NOT NULL UNIQUE,
+    reason TEXT NOT NULL,
+    issued_by INT NOT NULL,
+    valid_date DATE NOT NULL,
+    status ENUM('active', 'expired', 'revoked') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_pass_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT fk_pass_issuer FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- ============================================
 -- INDEXES
 -- ============================================
 CREATE INDEX idx_notification_user ON notifications(user_id);
@@ -170,6 +186,9 @@ CREATE INDEX idx_violations_status ON violations(status);
 CREATE INDEX idx_actions_violation ON disciplinary_actions(violation_id);
 CREATE INDEX idx_activity_user ON activity_log(user_id);
 CREATE INDEX idx_activity_date ON activity_log(created_at);
+CREATE INDEX idx_pass_code ON uniform_passes(pass_code);
+CREATE INDEX idx_pass_student ON uniform_passes(student_id);
+CREATE INDEX idx_pass_date ON uniform_passes(valid_date);
 
 -- ============================================
 -- SEED DATA

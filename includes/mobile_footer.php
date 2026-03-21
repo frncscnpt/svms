@@ -29,6 +29,10 @@
             <i class="bi bi-exclamation-triangle-fill"></i>
             <span>Violations</span>
         </a>
+        <a href="<?= BASE_PATH ?>/student/uniform_pass.php" class="m-nav-item <?= $currentPage === 'uniform_pass' ? 'active' : '' ?>">
+            <i class="bi bi-card-checklist"></i>
+            <span>Pass</span>
+        </a>
         <a href="<?= BASE_PATH ?>/notifications.php" class="m-nav-item <?= $currentPage === 'notifications' ? 'active' : '' ?> position-relative">
             <i class="bi bi-bell-fill"></i>
             <span>Alerts</span>

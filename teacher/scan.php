@@ -98,6 +98,28 @@ $hideScanNav = true;
     </div>
 </div>
 
+<!-- Pass Verification Result Section (Mobile) -->
+<div id="passResultSection" style="display:none;">
+    <div class="m-card mb-3">
+        <div id="passResultHeader" style="padding:28px;text-align:center;color:white;border-radius:18px 18px 0 0;">
+            <i id="passResultIcon" style="font-size:48px;display:block;margin-bottom:10px;"></i>
+            <h5 style="color:white;margin:0;" id="passResultTitle"></h5>
+            <small style="color:rgba(255,255,255,0.7);" id="passResultStatus"></small>
+        </div>
+        <div style="padding:0;">
+            <div class="m-detail-row"><span class="m-detail-label">Student</span><strong id="passStudentName"></strong></div>
+            <div class="m-detail-row"><span class="m-detail-label">Student No.</span><strong id="passStudentNumber"></strong></div>
+            <div class="m-detail-row"><span class="m-detail-label">Grade & Section</span><strong id="passGradeSection"></strong></div>
+            <div class="m-detail-row"><span class="m-detail-label">Reason</span><strong id="passReason"></strong></div>
+            <div class="m-detail-row"><span class="m-detail-label">Valid Date</span><strong id="passValidDate"></strong></div>
+            <div class="m-detail-row"><span class="m-detail-label">Issued By</span><strong id="passIssuedBy"></strong></div>
+        </div>
+    </div>
+    <button onclick="resetScanner()" class="m-submit-btn" style="width:100%;justify-content:center;padding:14px;">
+        <i class="bi bi-arrow-repeat me-1"></i> Scan Another
+    </button>
+</div>
+
 <!-- Error Section -->
 <div id="errorSection" style="display:none;">
     <div class="m-card">
@@ -148,6 +170,24 @@ $hideScanNav = true;
         <button class="btn-outline-custom" onclick="resetScanner()" style="padding:12px 20px;"><i class="bi bi-arrow-repeat"></i></button>
     </div>
 </div>
+<div id="passResultSection" style="display:none;">
+    <div class="card-panel mb-3">
+        <div id="passResultHeader" style="padding:28px;text-align:center;color:white;border-radius:18px 18px 0 0;">
+            <i id="passResultIcon" style="font-size:48px;display:block;margin-bottom:10px;"></i>
+            <h5 style="color:white;margin:0;" id="passResultTitle"></h5>
+            <small style="color:rgba(255,255,255,0.7);" id="passResultStatus"></small>
+        </div>
+        <div style="padding:0;">
+            <div class="d-flex justify-content-between py-3 px-4 border-bottom" style="font-size:13px;"><span class="text-muted">Student</span><strong id="passStudentName"></strong></div>
+            <div class="d-flex justify-content-between py-3 px-4 border-bottom" style="font-size:13px;"><span class="text-muted">Student No.</span><strong id="passStudentNumber"></strong></div>
+            <div class="d-flex justify-content-between py-3 px-4 border-bottom" style="font-size:13px;"><span class="text-muted">Grade & Section</span><strong id="passGradeSection"></strong></div>
+            <div class="d-flex justify-content-between py-3 px-4 border-bottom" style="font-size:13px;"><span class="text-muted">Reason</span><strong id="passReason"></strong></div>
+            <div class="d-flex justify-content-between py-3 px-4 border-bottom" style="font-size:13px;"><span class="text-muted">Valid Date</span><strong id="passValidDate"></strong></div>
+            <div class="d-flex justify-content-between py-3 px-4" style="font-size:13px;"><span class="text-muted">Issued By</span><strong id="passIssuedBy"></strong></div>
+        </div>
+    </div>
+    <button class="btn-primary-custom w-100" onclick="resetScanner()" style="padding:12px;"><i class="bi bi-arrow-repeat me-1"></i> Scan Another</button>
+</div>
 <div id="errorSection" style="display:none;">
     <div class="card-panel">
         <div class="panel-body text-center py-5">
@@ -177,7 +217,7 @@ function startScanner() {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 240, height: 240 } },
         (decodedText) => {
-            html5QrCode.stop().then(() => lookupStudent(decodedText)).catch(console.error);
+            html5QrCode.stop().then(() => handleScan(decodedText)).catch(console.error);
         },
         () => {}
     ).catch(() => {
@@ -187,6 +227,58 @@ function startScanner() {
                 <p style="font-size:13px;">Camera access required.<br>Please allow camera permissions.</p>
             </div>`;
     });
+}
+
+function handleScan(qrData) {
+    if (qrData.startsWith("TUP-")) {
+        verifyPass(qrData);
+    } else {
+        lookupStudent(qrData);
+    }
+}
+
+function verifyPass(code) {
+    fetch("<?= BASE_PATH ?>/api/verify_pass.php?code=" + encodeURIComponent(code))
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const isValid = data.valid;
+                const header = document.getElementById("passResultHeader");
+                const icon = document.getElementById("passResultIcon");
+                const title = document.getElementById("passResultTitle");
+                const status = document.getElementById("passResultStatus");
+
+                if (isValid) {
+                    header.style.background = "linear-gradient(135deg, #065f46, #059669)";
+                    icon.className = "bi bi-check-circle-fill";
+                    title.textContent = "PASS VALID";
+                } else {
+                    header.style.background = "linear-gradient(135deg, #7f1d1d, #dc2626)";
+                    icon.className = "bi bi-x-circle-fill";
+                    title.textContent = data.status === "revoked" ? "PASS REVOKED" : "PASS EXPIRED";
+                }
+                status.textContent = data.status_message;
+
+                document.querySelectorAll("[id=passStudentName]").forEach(el => el.textContent = data.student_name || "N/A");
+                document.querySelectorAll("[id=passStudentNumber]").forEach(el => el.textContent = data.student_number || "N/A");
+                document.querySelectorAll("[id=passGradeSection]").forEach(el => el.textContent = (data.grade_level || "") + " - " + (data.section || ""));
+                document.querySelectorAll("[id=passReason]").forEach(el => el.textContent = data.reason || "N/A");
+                document.querySelectorAll("[id=passValidDate]").forEach(el => el.textContent = data.valid_date_formatted || "N/A");
+                document.querySelectorAll("[id=passIssuedBy]").forEach(el => el.textContent = data.issued_by || "N/A");
+
+                document.getElementById("scannerSection").style.display = "none";
+                document.getElementById("passResultSection").style.display = "block";
+            } else {
+                document.getElementById("errorMsg").textContent = data.message || "Invalid pass code.";
+                document.getElementById("scannerSection").style.display = "none";
+                document.getElementById("errorSection").style.display = "block";
+            }
+        })
+        .catch(() => {
+            document.getElementById("errorMsg").textContent = "Network error. Please try again.";
+            document.getElementById("scannerSection").style.display = "none";
+            document.getElementById("errorSection").style.display = "block";
+        });
 }
 
 function lookupStudent(qrData) {
@@ -218,10 +310,13 @@ function lookupStudent(qrData) {
         });
 }
 
-function resetScanner() { startScanner(); }
+function resetScanner() {
+    document.getElementById("passResultSection").style.display = "none";
+    startScanner();
+}
 
 const urlQr = new URLSearchParams(location.search).get("qr");
-if (urlQr) { lookupStudent(urlQr); } else { startScanner(); }
+if (urlQr) { handleScan(urlQr); } else { startScanner(); }
 
 const galleryInput = document.getElementById("qrGalleryInput");
 if (galleryInput) {
