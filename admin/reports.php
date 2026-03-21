@@ -63,6 +63,21 @@ $byType = $pdo->prepare("
 ");
 $byType->execute([$dateFrom, $dateTo . ' 23:59:59']);
 $byType = $byType->fetchAll();
+
+// Fetch paginated records
+$page = max(1, intval($_GET['page'] ?? 1));
+$recordsResult = paginate(
+    "SELECT v.id as violation_id, s.student_number, CONCAT(s.first_name,' ',s.last_name) as name, s.grade_level, s.section, 
+           vt.name as violation, vt.severity, v.status, v.date_occurred, u.full_name as reporter, s.photo
+    FROM violations v 
+    JOIN students s ON v.student_id=s.id 
+    JOIN violation_types vt ON v.violation_type_id=vt.id 
+    JOIN users u ON v.reported_by=u.id 
+    WHERE v.date_occurred BETWEEN ? AND ? 
+    ORDER BY v.date_occurred DESC",
+    [$dateFrom, $dateTo . ' 23:59:59'], 
+    $page, 20
+);
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -181,6 +196,53 @@ $byType = $byType->fetchAll();
             </div>
         </div>
     </div>
+</div>
+
+<!-- Detailed Records Table -->
+<div class="card-panel mt-4">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <h5 class="panel-title mb-0"><i class="bi bi-list-ul"></i> Violation Records for Selected Period</h5>
+    </div>
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Student</th>
+                    <th>Grade / Section</th>
+                    <th>Violation</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($recordsResult['data'] as $r): ?>
+                <tr>
+                    <td><small><?= date('M d, Y h:i A', strtotime($r['date_occurred'])) ?></small></td>
+                    <td>
+                        <div class="user-cell">
+                            <?= getAvatarHtml($r['photo'] ?? null, $r['name'], 'user-avatar', 'width:32px;height:32px;font-size:12px;') ?>
+                            <div class="user-info">
+                                <div class="name"><?= sanitize($r['name']) ?></div>
+                                <div class="sub"><?= sanitize($r['student_number']) ?></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><small><?= sanitize($r['grade_level'] . ' - ' . $r['section']) ?></small></td>
+                    <td><small><?= sanitize($r['violation']) ?></small></td>
+                    <td><?= severityBadge($r['severity']) ?></td>
+                    <td><span class="badge badge-soft-<?= $r['status'] == 'resolved' ? 'success' : ($r['status'] == 'pending' ? 'warning' : 'secondary') ?>"><?= ucfirst(sanitize($r['status'])) ?></span></td>
+                </tr>
+                <?php endforeach; ?>
+                <?php if (empty($recordsResult['data'])): ?>
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No violation records found for the selected period.</td>
+                </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    <?= renderPagination($recordsResult, '?type='.$reportType.'&from='.$dateFrom.'&to='.$dateTo.'&grade='.urlencode($gradeFilter)) ?>
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
