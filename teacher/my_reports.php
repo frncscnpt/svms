@@ -37,7 +37,7 @@ if (IS_MOBILE):
 <!-- Section Header -->
 <div class="m-section-header mb-3">
     <span class="m-section-title">My Reports</span>
-    <a href="<?= BASE_PATH ?>/teacher/report.php" class="m-pill purple"><i class="bi bi-plus-lg me-1"></i>New</a>
+    <a href="<?= BASE_PATH ?>/teacher/scan.php" class="m-pill purple"><i class="bi bi-plus-lg me-1"></i>New</a>
 </div>
 
 <?php if (empty($reports)): ?>
@@ -83,7 +83,7 @@ else: // DESKTOP ?>
 <div class="card-panel">
     <div class="panel-header">
         <h5 class="panel-title"><i class="bi bi-file-earmark-text-fill"></i> My Reports</h5>
-        <a href="<?= BASE_PATH ?>/teacher/report.php" class="btn-primary-custom" style="font-size:12px;padding:7px 16px;">
+        <a href="<?= BASE_PATH ?>/teacher/scan.php" class="btn-primary-custom" style="font-size:12px;padding:7px 16px;">
             <i class="bi bi-plus-lg"></i> New Report
         </a>
     </div>

@@ -65,10 +65,10 @@ $hideScanNav = true;
                 <span>Upload QR</span>
                 <input type="file" accept="image/*" id="qrGalleryInput" style="display:none;">
             </label>
-            <a href="<?= BASE_PATH ?>/teacher/report.php" class="m-scanner-btn">
+            <button type="button" class="m-scanner-btn" onclick="showManualSearch()" style="background:none; border:none; color:white;">
                 <i class="bi bi-person-lines-fill"></i>
                 <span>Search Student</span>
-            </a>
+            </button>
         </div>
     </div>
 </div>
@@ -139,11 +139,35 @@ $hideScanNav = true;
 <!-- Desktop layout -->
 <div class="row justify-content-center">
 <div class="col-lg-6">
+
+<!-- Search Section (New) -->
+<div class="card-panel mb-3">
+    <div class="panel-header d-flex justify-content-between align-items-center">
+        <h5 class="panel-title mb-0"><i class="bi bi-search"></i> Manual Search</h5>
+    </div>
+    <div class="panel-body">
+        <form id="desktopSearchForm" class="d-flex gap-2 position-relative" onsubmit="event.preventDefault();">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="desktopSearchInput" class="form-control border-start-0 ps-0" placeholder="Enter name or student number..." autocomplete="off">
+            </div>
+            <ul id="desktopSearchResults" class="dropdown-menu w-100 shadow-sm" style="display:none; position:absolute; top:100%; left:0; max-height:250px; overflow-y:auto; z-index:1050; margin-top:4px; padding:0;"></ul>
+            <button type="submit" class="btn-primary-custom px-4" style="visibility:hidden; width:0; padding:0!important; margin:0;" tabindex="-1"></button>
+        </form>
+    </div>
+</div>
+
 <div id="scannerSection">
     <div class="card-panel mb-3">
         <div class="panel-header"><h5 class="panel-title"><i class="bi bi-qr-code-scan"></i> QR Scanner</h5></div>
         <div class="panel-body">
             <div id="qrReader" style="min-height:280px;border-radius:12px;overflow:hidden;"></div>
+            <div class="text-center mt-3">
+                <label class="btn btn-outline-secondary btn-sm" style="border-radius:10px;padding:8px 16px;cursor:pointer;">
+                    <i class="bi bi-upload me-1"></i> Upload QR Code Image
+                    <input type="file" accept="image/*" id="qrGalleryInputDesktop" style="display:none;">
+                </label>
+            </div>
             <div class="qr-scanner-hint mt-3 text-center">
                 <i class="bi bi-qr-code-scan" style="font-size:22px;color:var(--primary);display:block;margin-bottom:6px;"></i>
                 Position the QR code within the frame to scan
@@ -220,15 +244,53 @@ $hideScanNav = true;
     </div>
 </div>
 
-<?php
-$extraJS = '<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<!-- Mobile Manual Search Modal -->
+<div class="modal fade" id="mobileSearchModal" tabindex="-1">
+    <div class="modal-dialog" style="max-width:400px; margin:16px auto;">
+        <div class="modal-content" style="border-radius:24px; border:none; overflow:hidden;">
+            <div class="modal-header" style="border-bottom:none; padding:24px 24px 10px;">
+                <h5 class="modal-title" style="font-weight:700; font-size:18px;">Search Student</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:0 24px 24px;">
+                <form id="mobileSearchForm" onsubmit="event.preventDefault();">
+                    <div class="input-group mb-2" style="border-radius:12px; overflow:hidden; border:1.5px solid #ede9ee;">
+                        <span class="input-group-text bg-white" style="border:none;"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="mobileSearchInput" class="form-control" style="border:none; padding-left:0; font-size:15px; box-shadow:none;" autocomplete="off" placeholder="Name or student number">
+                    </div>
+                    <!-- Make the list statically positioned so it scrolls natively inside the modal -->
+                    <ul id="mobileSearchResults" class="w-100 shadow-sm bg-white" style="display:none; list-style:none; margin:0; padding:0; border-radius:12px; border:1px solid #ede9ee; max-height:250px; overflow-y:auto; overscroll-behavior:contain;"></ul>
+                    <div class="text-center text-muted mt-2 mb-2" style="font-size:13px;" id="mobileSearchHint"><i class="bi bi-keyboard"></i> Type to search...</div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php $extraJS = ''; ?>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 let html5QrCode;
 
-function showScanError(msg) {
-    document.getElementById("scanErrorMsg").textContent = msg || "Could not read QR code from image.";
+// Strip server-injected HTML (e.g. InfinityFree ads) before parsing JSON
+function safeParseJSON(text) {
+    const start = Math.min(
+        text.indexOf('{') === -1 ? Infinity : text.indexOf('{'),
+        text.indexOf('[') === -1 ? Infinity : text.indexOf('[')
+    );
+    if (start === Infinity) throw new SyntaxError("No JSON found in response");
+    return JSON.parse(text.substring(start));
+}
+
+function showScanError(msg, detail = null) {
+    const errorText = detail ? `${msg}\n\nError: ${detail}` : msg;
+    document.getElementById("scanErrorMsg").textContent = errorText;
     var modal = document.getElementById("scanErrorModal");
-    if (modal) { new bootstrap.Modal(modal).show(); } else { alert(msg); }
+    if (modal) { 
+        new bootstrap.Modal(modal).show(); 
+    } else { 
+        alert(errorText); 
+    }
 }
 
 function startScanner() {
@@ -262,43 +324,52 @@ function handleScan(qrData) {
 }
 
 function verifyPass(code) {
-    fetch("<?= BASE_PATH ?>/api/verify_pass.php?code=" + encodeURIComponent(code))
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                const isValid = data.valid;
-                const header = document.getElementById("passResultHeader");
-                const icon = document.getElementById("passResultIcon");
-                const title = document.getElementById("passResultTitle");
-                const status = document.getElementById("passResultStatus");
+    fetch("<?= BASE_PATH ?>/api/verify_pass.php?code=" + encodeURIComponent(code), {
+        headers: { "Bypass-Tunnel-Reminder": "true" }
+    })
+        .then(r => r.text())
+        .then(text => {
+            try {
+                const data = safeParseJSON(text);
+                if (data.success) {
+                    const isValid = data.valid;
+                    const header = document.getElementById("passResultHeader");
+                    const icon = document.getElementById("passResultIcon");
+                    const title = document.getElementById("passResultTitle");
+                    const status = document.getElementById("passResultStatus");
 
-                if (isValid) {
-                    header.style.background = "linear-gradient(135deg, #065f46, #059669)";
-                    icon.className = "bi bi-check-circle-fill";
-                    title.textContent = "PASS VALID";
+                    if (isValid) {
+                        header.style.background = "linear-gradient(135deg, #065f46, #059669)";
+                        icon.className = "bi bi-check-circle-fill";
+                        title.textContent = "PASS VALID";
+                    } else {
+                        header.style.background = "linear-gradient(135deg, #7f1d1d, #dc2626)";
+                        icon.className = "bi bi-x-circle-fill";
+                        title.textContent = data.status === "revoked" ? "PASS REVOKED" : "PASS EXPIRED";
+                    }
+                    status.textContent = data.status_message;
+
+                    document.querySelectorAll("[id=passStudentName]").forEach(el => el.textContent = data.student_name || "N/A");
+                    document.querySelectorAll("[id=passStudentNumber]").forEach(el => el.textContent = data.student_number || "N/A");
+                    document.querySelectorAll("[id=passGradeSection]").forEach(el => el.textContent = (data.grade_level || "") + " - " + (data.section || ""));
+                    document.querySelectorAll("[id=passReason]").forEach(el => el.textContent = data.reason || "N/A");
+                    document.querySelectorAll("[id=passValidDate]").forEach(el => el.textContent = data.valid_date_formatted || "N/A");
+                    document.querySelectorAll("[id=passIssuedBy]").forEach(el => el.textContent = data.issued_by || "N/A");
+
+                    document.getElementById("scannerSection").style.display = "none";
+                    document.getElementById("passResultSection").style.display = "block";
                 } else {
-                    header.style.background = "linear-gradient(135deg, #7f1d1d, #dc2626)";
-                    icon.className = "bi bi-x-circle-fill";
-                    title.textContent = data.status === "revoked" ? "PASS REVOKED" : "PASS EXPIRED";
+                    document.getElementById("errorMsg").textContent = data.message || "Invalid pass code.";
+                    document.getElementById("scannerSection").style.display = "none";
+                    document.getElementById("errorSection").style.display = "block";
                 }
-                status.textContent = data.status_message;
-
-                document.querySelectorAll("[id=passStudentName]").forEach(el => el.textContent = data.student_name || "N/A");
-                document.querySelectorAll("[id=passStudentNumber]").forEach(el => el.textContent = data.student_number || "N/A");
-                document.querySelectorAll("[id=passGradeSection]").forEach(el => el.textContent = (data.grade_level || "") + " - " + (data.section || ""));
-                document.querySelectorAll("[id=passReason]").forEach(el => el.textContent = data.reason || "N/A");
-                document.querySelectorAll("[id=passValidDate]").forEach(el => el.textContent = data.valid_date_formatted || "N/A");
-                document.querySelectorAll("[id=passIssuedBy]").forEach(el => el.textContent = data.issued_by || "N/A");
-
-                document.getElementById("scannerSection").style.display = "none";
-                document.getElementById("passResultSection").style.display = "block";
-            } else {
-                document.getElementById("errorMsg").textContent = data.message || "Invalid pass code.";
-                document.getElementById("scannerSection").style.display = "none";
-                document.getElementById("errorSection").style.display = "block";
+            } catch (err) {
+                alert("Server returned invalid response: " + text.substring(0, 100));
+                throw err;
             }
         })
-        .catch(() => {
+        .catch((e) => {
+            alert("Error in verifyPass: " + e);
             document.getElementById("errorMsg").textContent = "Network error. Please try again.";
             document.getElementById("scannerSection").style.display = "none";
             document.getElementById("errorSection").style.display = "block";
@@ -306,58 +377,248 @@ function verifyPass(code) {
 }
 
 function lookupStudent(qrData) {
-    fetch("<?= BASE_PATH ?>/api/qr_lookup.php?qr=" + encodeURIComponent(qrData))
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                const s = data.student;
-                document.getElementById("resultAvatar").textContent = s.initials;
-                document.getElementById("resultName").textContent = s.first_name + " " + s.last_name;
-                document.getElementById("resultNumber").textContent = s.student_number;
-                document.getElementById("resultGrade").textContent = s.grade_level + " - " + s.section;
-                document.getElementById("resultContact").textContent = s.contact || "N/A";
-                document.getElementById("resultGuardian").textContent = s.guardian_name || "N/A";
-                document.getElementById("resultViolations").textContent = s.violation_count;
-                document.getElementById("reportBtn").href = "<?= BASE_PATH ?>/teacher/report.php?student_id=" + s.id;
-                document.getElementById("scannerSection").style.display = "none";
-                document.getElementById("resultSection").style.display = "block";
+    if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop().catch(()=>{});
+    
+    fetch("<?= BASE_PATH ?>/api/qr_lookup.php?qr=" + encodeURIComponent(qrData), {
+        headers: { "Bypass-Tunnel-Reminder": "true" }
+    })
+        .then(r => r.text())
+        .then(text => handleStudentResultResponse(text))
+        .catch(handleStudentResultError);
+}
+
+function showManualSearch() {
+    new bootstrap.Modal(document.getElementById('mobileSearchModal')).show();
+    setTimeout(() => document.getElementById('mobileSearchInput').focus(), 500);
+}
+
+let searchTimeout = null;
+
+function bindAutocomplete(inputId, resultsId) {
+    const inputEl = document.getElementById(inputId);
+    const resultsEl = document.getElementById(resultsId);
+    if (!inputEl || !resultsEl) return;
+    
+    inputEl.addEventListener('input', function() {
+        const query = this.value;
+        if (searchTimeout) clearTimeout(searchTimeout);
+        
+        if (!query.trim() || query.length < 2) {
+            resultsEl.style.display = 'none';
+            if(resultsId === 'mobileSearchResults') document.getElementById('mobileSearchHint').style.display = 'block';
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            if(resultsId === 'mobileSearchResults') document.getElementById('mobileSearchHint').style.display = 'none';
+            fetch("<?= BASE_PATH ?>/api/search_students.php?q=" + encodeURIComponent(query))
+                .then(r => r.json())
+                .then(data => {
+                    resultsEl.innerHTML = '';
+                    if (data.success && data.results.length > 0) {
+                        data.results.forEach(s => {
+                            const li = document.createElement('li');
+                            // Ensure avatar is properly sized for dropdown
+                            let av = s.avatar_html || '';
+                            av = av.replace(/width:\s*48px/, 'width: 32px').replace(/height:\s*48px/, 'height: 32px').replace(/font-size:\s*18px/, 'font-size: 13px');
+                            
+                            // Adjust class for mobile vs desktop if needed, though dropdown-item works if hover effects are desired
+                            const isMobile = resultsId === 'mobileSearchResults';
+                            const itemClass = isMobile ? 'd-flex align-items-center gap-3 py-2 px-3 border-bottom' : 'dropdown-item d-flex align-items-center gap-3 py-2 border-bottom';
+                            
+                            li.innerHTML = `
+                                <a class="${itemClass}" href="#" style="cursor:pointer; white-space:normal; text-decoration:none; color:inherit; display:flex;">
+                                    <div style="flex-shrink:0;">${av}</div>
+                                    <div style="flex-grow:1; min-width:0;">
+                                        <div style="font-weight:600; font-size:14px; text-overflow:ellipsis; overflow:hidden;">${s.first_name} ${s.last_name}</div>
+                                        <div style="font-size:12px; color:var(--text-muted);">${s.student_number} &middot; ${s.grade_level}</div>
+                                    </div>
+                                </a>
+                            `;
+                            
+                            li.onclick = (e) => {
+                                e.preventDefault();
+                                resultsEl.style.display = 'none';
+                                inputEl.value = s.first_name + ' ' + s.last_name;
+                                selectStudent(s);
+                            };
+                            resultsEl.appendChild(li);
+                        });
+                        resultsEl.style.display = 'block';
+                    } else {
+                        resultsEl.innerHTML = '<li class="px-3 py-3 text-muted text-center" style="font-size:13px;">No students found matching that name.</li>';
+                        resultsEl.style.display = 'block';
+                    }
+                })
+                .catch(err => console.error(err));
+        }, 300);
+    });
+    
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!inputEl.contains(e.target) && !resultsEl.contains(e.target)) {
+            resultsEl.style.display = 'none';
+        }
+    });
+}
+
+// Bind live search
+document.addEventListener('DOMContentLoaded', () => {
+    bindAutocomplete('desktopSearchInput', 'desktopSearchResults');
+    bindAutocomplete('mobileSearchInput', 'mobileSearchResults');
+});
+
+function selectStudent(studentObj) {
+    // Hide modal if on mobile
+    const bsModal = bootstrap.Modal.getInstance(document.getElementById('mobileSearchModal'));
+    if (bsModal) bsModal.hide();
+    
+    if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop().catch(()=>{});
+    
+    // Create a mock payload to reuse the existing result rendering logic
+    const payload = JSON.stringify({ success: true, student: studentObj });
+    handleStudentResultResponse(payload);
+}
+
+function handleStudentResultResponse(text) {
+    try {
+        const data = safeParseJSON(text);
+        if (data.success) {
+            // Reusing the same UI for both QR lookup and manual search
+            const s = data.student;
+            const avatarHtml = s.avatar_html || '';
+            const avatarEl = document.getElementById("resultAvatar");
+            if (avatarHtml.includes('<img')) {
+                avatarEl.innerHTML = avatarHtml;
+                avatarEl.style.background = 'transparent';
             } else {
-                document.getElementById("errorMsg").textContent = data.message || "No student found.";
-                document.getElementById("scannerSection").style.display = "none";
-                document.getElementById("errorSection").style.display = "block";
+                avatarEl.innerHTML = '<span>' + (s.first_name[0] + s.last_name[0]).toUpperCase() + '</span>';
             }
-        })
-        .catch(() => {
-            document.getElementById("errorMsg").textContent = "Network error. Please try again.";
+            // Clear previous initials if we appended HTML
+            if (avatarHtml) avatarEl.innerHTML = avatarHtml;
+
+            document.getElementById("resultName").textContent = s.first_name + " " + s.last_name;
+            document.getElementById("resultNumber").textContent = s.student_number;
+            document.getElementById("resultGrade").textContent = s.grade_level + " - " + s.section;
+            document.getElementById("resultContact").textContent = s.contact || "N/A";
+            document.getElementById("resultGuardian").textContent = s.guardian_name || "N/A";
+            document.getElementById("resultViolations").textContent = s.violation_count;
+            
+            // Set the report button to point to report.php with this specific student_id
+            document.getElementById("reportBtn").href = "<?= BASE_PATH ?>/teacher/report.php?student_id=" + s.id;
+            
+            document.getElementById("scannerSection").style.display = "none";
+            document.getElementById("resultSection").style.display = "block";
+            document.getElementById("errorSection").style.display = "none";
+        } else {
+            document.getElementById("errorMsg").textContent = data.message || "No student found.";
             document.getElementById("scannerSection").style.display = "none";
             document.getElementById("errorSection").style.display = "block";
-        });
+            document.getElementById("resultSection").style.display = "none";
+        }
+    } catch (err) {
+        alert("Server returned invalid response.");
+        console.error(err, text);
+        handleStudentResultError(err);
+    }
+}
+
+function handleStudentResultError(e) {
+    console.error("Lookup error:", e);
+    document.getElementById("errorMsg").textContent = "Network error or student not found.";
+    document.getElementById("scannerSection").style.display = "none";
+    document.getElementById("errorSection").style.display = "block";
 }
 
 function resetScanner() {
     document.getElementById("passResultSection").style.display = "none";
+    
+    // Clear desktop search input if it exists
+    const dtSearch = document.getElementById('desktopSearchInput');
+    if (dtSearch) dtSearch.value = '';
+    
+    const mbSearch = document.getElementById('mobileSearchInput');
+    if (mbSearch) mbSearch.value = '';
+    
     startScanner();
 }
 
-const urlQr = new URLSearchParams(location.search).get("qr");
-if (urlQr) { handleScan(urlQr); } else { startScanner(); }
+const urlParams = new URLSearchParams(location.search);
+const urlQr = urlParams.get("qr");
+const actionParam = urlParams.get("action");
+
+if (urlQr) { 
+    handleScan(urlQr); 
+} else { 
+    startScanner(); 
+    
+    // Auto-open search if requested via URL
+    if (actionParam === "search") {
+        const tryOpenSearch = () => {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', tryOpenSearch);
+            } else {
+                setTimeout(() => {
+                    if (window.innerWidth < 992) {
+                        showManualSearch();
+                    } else {
+                        const dtInput = document.getElementById('desktopSearchInput');
+                        if (dtInput) dtInput.focus();
+                    }
+                }, 150);
+            }
+        };
+        tryOpenSearch();
+    }
+}
+
+const processFile = async function(file) {
+    if (!file) return;
+    
+    // Check if camera is currently scanning (state 2 or isScanning property)
+    let isScanning = false;
+    try {
+        isScanning = html5QrCode && (html5QrCode.isScanning || html5QrCode.getState() === 2);
+    } catch (e) {
+        isScanning = false;
+    }
+    
+    try {
+        if (isScanning) {
+            await html5QrCode.stop();
+        }
+        
+        // Use instance scanFile with showImage=false
+        const result = await html5QrCode.scanFile(file, false);
+        handleScan(result);
+    } catch (e) {
+        console.error("QR Scan Error:", e);
+        showScanError("Could not read QR code from image. Please try a clearer or brighter photo.", e);
+        
+        // If it was scanning before, restart it so the user isn't stuck with a blank screen
+        if (isScanning) {
+            startScanner();
+        }
+    }
+};
 
 const galleryInput = document.getElementById("qrGalleryInput");
 if (galleryInput) {
-    galleryInput.addEventListener("change", async function() {
-        const file = this.files[0];
-        if (!file) return;
-        try {
-            const result = await Html5Qrcode.scanFile(file, true);
-            handleScan(result);
-        } catch (e) {
-            showScanError("Could not read QR code from image. Please try a clearer photo.");
-        }
-        this.value = "";
+    galleryInput.addEventListener("change", e => {
+        processFile(e.target.files[0]);
+        e.target.value = "";
     });
 }
-</script>';
 
+const galleryInputDesktop = document.getElementById("qrGalleryInputDesktop");
+if (galleryInputDesktop) {
+    galleryInputDesktop.addEventListener("change", e => {
+        processFile(e.target.files[0]);
+        e.target.value = "";
+    });
+}
+</script>
+<?php
 if (IS_MOBILE) {
     require_once __DIR__ . '/../includes/mobile_footer.php';
 } else {

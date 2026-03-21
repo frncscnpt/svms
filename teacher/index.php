@@ -115,7 +115,7 @@ if (IS_MOBILE):
             <i class="bi bi-chevron-right" style="color:rgba(255,255,255,0.35);font-size:16px;"></i>
         </a>
         <!-- File Report — white card -->
-        <a href="<?= BASE_PATH ?>/teacher/report.php" class="m-quick-action-secondary">
+        <a href="<?= BASE_PATH ?>/teacher/scan.php?action=search" class="m-quick-action-secondary">
             <div class="m-quick-action-icon" style="background:#ebe7ec;">
                 <i class="bi bi-exclamation-triangle-fill" style="color:#2e1731;font-size:20px;"></i>
             </div>
@@ -273,7 +273,7 @@ else: // DESKTOP ?>
         <div class="card-panel">
             <div class="panel-header"><h5 class="panel-title"><i class="bi bi-lightning-fill"></i> Quick Actions</h5></div>
             <div class="panel-body" style="padding:12px;">
-                <a href="<?= BASE_PATH ?>/teacher/report.php" class="d-flex align-items-center gap-3 p-3 text-decoration-none" style="border-radius:12px;transition:background 0.2s;" onmouseover="this.style.background='#f7f2f8'" onmouseout="this.style.background='transparent'">
+                <a href="<?= BASE_PATH ?>/teacher/scan.php?action=search" class="d-flex align-items-center gap-3 p-3 text-decoration-none" style="border-radius:12px;transition:background 0.2s;" onmouseover="this.style.background='#f7f2f8'" onmouseout="this.style.background='transparent'">
                     <div style="width:40px;height:40px;background:rgba(46,23,49,0.07);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px;"><i class="bi bi-plus-circle-fill"></i></div>
                     <div>
                         <div style="font-weight:600;font-size:14px;color:var(--text-primary);">File a Report</div>

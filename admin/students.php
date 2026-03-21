@@ -144,6 +144,12 @@ $grades = $pdo->query("SELECT DISTINCT grade_level FROM students WHERE status='a
         <a href="?generate_all=1" class="btn-outline-custom" onclick="return confirm('Generate QR codes for all students missing one?')">
             <i class="bi bi-qr-code"></i> Generate Missing QRs
         </a>
+        <a href="<?= BASE_PATH ?>/admin/students_import.php" class="btn-outline-custom border-primary text-primary hover-bg-primary hover-text-white">
+            <i class="bi bi-cloud-arrow-up"></i> Import CSV
+        </a>
+        <a href="<?= BASE_PATH ?>/admin/students_bulk.php" class="btn-outline-custom" style="border-color:#130117; color:#130117;">
+            <i class="bi bi-people-fill"></i> Bulk Actions
+        </a>
         <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#studentModal" onclick="resetForm()">
             <i class="bi bi-plus-lg"></i> Add Student
         </button>

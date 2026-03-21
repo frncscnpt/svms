@@ -33,21 +33,23 @@ $stmt = $pdo->prepare("
     SELECT up.*, u.full_name AS issued_by_name
     FROM uniform_passes up
     JOIN users u ON up.issued_by = u.id
-    WHERE up.student_id = ? AND up.status = 'active' AND up.valid_date = ?
+    WHERE up.student_id = ? AND up.status = 'active' AND up.valid_date >= ?
     ORDER BY up.created_at DESC LIMIT 1
 ");
 $stmt->execute([$studentId, date('Y-m-d')]);
 $activePass = $stmt->fetch();
 
-// Get pass history
+// Get pass history (exclude today's active pass — already shown above)
 $history = $pdo->prepare("
     SELECT up.*, u.full_name AS issued_by_name
     FROM uniform_passes up
     JOIN users u ON up.issued_by = u.id
     WHERE up.student_id = ?
+      AND NOT (up.status = 'active' AND up.valid_date >= ?)
     ORDER BY up.created_at DESC LIMIT 10
 ");
-$history->execute([$studentId]);
+$phToday = date('Y-m-d');
+$history->execute([$studentId, $phToday]);
 $passHistory = $history->fetchAll();
 
 if (IS_MOBILE):

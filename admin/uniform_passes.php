@@ -13,13 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $passCode = 'TUP-' . generateUUID();
         $validDate = $_POST['valid_date'] ?: date('Y-m-d');
         
-        $stmt = $pdo->prepare("INSERT INTO uniform_passes (student_id, pass_code, reason, issued_by, valid_date) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO uniform_passes (student_id, pass_code, reason, issued_by, valid_date, created_at) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $_POST['student_id'],
             $passCode,
             sanitize($_POST['reason']),
             $_SESSION['user_id'],
-            $validDate
+            $validDate,
+            date('Y-m-d H:i:s')
         ]);
         
         // Notify the student
@@ -92,14 +93,17 @@ $stmtActivePasses = $pdo->prepare("
 $stmtActivePasses->execute([date('Y-m-d')]);
 $activePasses = $stmtActivePasses->fetchAll();
 
-// Search + history
+// Search + history (excludes today's active passes - shown in Active section above)
 $search = $_GET['search'] ?? '';
-$historyWhere = '';
-$historyParams = [];
+$today = date('Y-m-d');
+$historyBaseWhere = "NOT (up.status = 'active' AND up.valid_date = ?)";
+$historyParams = [$today];
 if ($search) {
-    $historyWhere = "AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_number LIKE ? OR up.pass_code LIKE ?)";
+    $historyWhere = "AND $historyBaseWhere AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_number LIKE ? OR up.pass_code LIKE ?)";
     $searchLike = "%$search%";
-    $historyParams = [$searchLike, $searchLike, $searchLike, $searchLike];
+    $historyParams = [$today, $searchLike, $searchLike, $searchLike, $searchLike];
+} else {
+    $historyWhere = "AND $historyBaseWhere";
 }
 
 $page = max(1, intval($_GET['page'] ?? 1));

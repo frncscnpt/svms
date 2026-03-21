@@ -29,6 +29,13 @@ function getDBConnection()
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET
             ];
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+
+            // Try to set Manila timezone. Silently ignore if the host restricts it.
+            try {
+                $pdo->exec("SET time_zone = '+08:00'");
+            } catch (PDOException $tzError) {
+                // Gracefully ignored - shared hosts like InfinityFree don't allow this
+            }
         }
         catch (PDOException $e) {
             error_log("Database connection failed: " . $e->getMessage());
@@ -42,19 +49,23 @@ function getDBConnection()
 /**
  * Application Configuration
  */
-$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+// Flawless Base Path Detection (Symlink, Case, and Server independent)
+$scriptName = $_SERVER['SCRIPT_NAME'];
+$scriptFile = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME']);
 $appDir = str_replace('\\', '/', dirname(__DIR__));
-$basePath = str_replace($docRoot, '', $appDir);
 
-// Handle symlinks on free hosting (like InfinityFree)
-if ($basePath === $appDir && realpath($_SERVER['DOCUMENT_ROOT'])) {
-    $docRootReal = str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT']));
-    $basePath = str_replace($docRootReal, '', $appDir);
+// The relative path from the app root to the currently executing file
+$trailingPath = str_replace($appDir, '', $scriptFile); 
+
+// Strip the trailing path from SCRIPT_NAME to get the true network base path
+$basePath = '';
+if (!empty($trailingPath) && substr_compare($scriptName, $trailingPath, -strlen($trailingPath), null, true) === 0) {
+    $basePath = substr($scriptName, 0, -strlen($trailingPath));
+} else {
+    // Absolute fallback
+    $basePath = (stripos($scriptName, '/svms/') === 0) ? substr($scriptName, 0, 5) : '';
 }
-// Ultimate fallback if nothing matches (usually means it's at the web root)
-if ($basePath === $appDir || strpos($basePath, '/home/') === 0 || strpos($basePath, '/var/') === 0) {
-    $basePath = '';
-}
+
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'];
 
