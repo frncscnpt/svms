@@ -1,0 +1,41 @@
+# Temporary Uniform Pass Feature
+
+## Planning
+- [x] Review project structure and existing codebase
+- [x] Write implementation plan
+- [x] Get user approval on plan
+
+## Database
+- [x] Create `uniform_passes` table (SQL migration)
+- [x] Add to [svms_db.sql](file:///c:/xampp/htdocs/SVMS/database/svms_db.sql) schema file
+
+## Backend (API)
+- [x] Create [api/verify_pass.php](file:///c:/xampp/htdocs/SVMS/api/verify_pass.php) — verify pass via unique code
+- [x] Set timezone for PHP (`Asia/Manila`) and MySQL (`+08:00`)
+
+## Discipline Officer Interface
+- [x] Create [discipline/uniform_passes.php](file:///c:/xampp/htdocs/SVMS/discipline/uniform_passes.php) — list/issue/revoke passes
+- [x] Add sidebar nav link in [includes/header.php](file:///c:/xampp/htdocs/SVMS/includes/header.php)
+
+## Teacher Interface (Mobile PWA)
+- [x] Modify [teacher/scan.php](file:///c:/xampp/htdocs/SVMS/teacher/scan.php) — TUP- code detection + verify pass display
+- [x] Added pass verification result UI (green valid / red invalid)
+
+## Student Interface (Mobile PWA)
+- [x] Create [student/uniform_pass.php](file:///c:/xampp/htdocs/SVMS/student/uniform_pass.php) — view active pass with QR code
+- [x] Add nav link in [mobile_footer.php](file:///c:/xampp/htdocs/SVMS/includes/mobile_footer.php) and [header.php](file:///c:/xampp/htdocs/SVMS/includes/header.php)
+
+## Admin Interface
+- [x] Create [admin/uniform_passes.php](file:///c:/xampp/htdocs/SVMS/admin/uniform_passes.php) — view/manage all passes
+- [x] Add sidebar nav link in [includes/header.php](file:///c:/xampp/htdocs/SVMS/includes/header.php)
+
+## Notifications
+- [x] Notify student when pass is issued
+- [x] Notify student when pass is revoked
+
+## Verification & Testing
+- [x] Test pass issuance by discipline officer
+- [x] Test student pass view
+- [x] Test pass verification API
+- [x] Test pass expiration/revocation
+- [x] Pushed changes to GitHub

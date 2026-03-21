@@ -183,6 +183,9 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
                     <td><code style="font-size:11px;"><?= sanitize($p['pass_code']) ?></code></td>
                     <td><small><?= sanitize($p['issued_by_name']) ?></small></td>
                     <td>
+                        <a href="print_pass.php?id=<?= $p['id'] ?>" class="action-btn text-primary-custom" title="Print Pass" target="_blank">
+                            <i class="bi bi-printer"></i>
+                        </a>
                         <a href="?revoke=<?= $p['id'] ?>" class="action-btn text-danger" title="Revoke Pass" onclick="return confirm('Revoke this pass?')">
                             <i class="bi bi-x-circle"></i>
                         </a>
@@ -206,7 +209,7 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
 
     <div class="data-table-wrapper">
         <table class="data-table">
-            <thead><tr><th>Student</th><th>Reason</th><th>Valid Date</th><th>Status</th><th>Issued By</th><th>Created</th></tr></thead>
+            <thead><tr><th>Student</th><th>Reason</th><th>Valid Date</th><th>Status</th><th>Issued By</th><th>Created</th><th>Actions</th></tr></thead>
             <tbody>
                 <?php foreach ($historyResult['data'] as $h): ?>
                 <?php
@@ -226,9 +229,14 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
                     <td><span class="badge <?= $statusClasses[$hStatus] ?? 'badge-soft-secondary' ?>"><?= ucfirst($hStatus) ?></span></td>
                     <td><small><?= sanitize($h['issued_by_name']) ?></small></td>
                     <td><small class="text-muted"><?= timeAgo($h['created_at']) ?></small></td>
+                    <td>
+                        <a href="print_pass.php?id=<?= $h['id'] ?>" class="action-btn text-primary-custom" title="Print Pass" target="_blank">
+                            <i class="bi bi-printer"></i>
+                        </a>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
-                <?php if (empty($historyResult['data'])): ?><tr><td colspan="6" class="text-center text-muted py-4">No passes found</td></tr><?php endif; ?>
+                <?php if (empty($historyResult['data'])): ?><tr><td colspan="7" class="text-center text-muted py-4">No passes found</td></tr><?php endif; ?>
             </tbody>
         </table>
     </div>
