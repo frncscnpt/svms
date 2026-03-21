@@ -26,7 +26,7 @@ function getDBConnection()
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET . ", time_zone = '+08:00'"
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET
             ];
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         }
@@ -42,9 +42,19 @@ function getDBConnection()
 /**
  * Application Configuration
  */
-$docRoot = rtrim($_SERVER['DOCUMENT_ROOT'], '/\\');
-$dir = str_replace('\\', '/', dirname(__DIR__));
-$basePath = str_replace($docRoot, '', $dir);
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+$appDir = str_replace('\\', '/', dirname(__DIR__));
+$basePath = str_replace($docRoot, '', $appDir);
+
+// Handle symlinks on free hosting (like InfinityFree)
+if ($basePath === $appDir && realpath($_SERVER['DOCUMENT_ROOT'])) {
+    $docRootReal = str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT']));
+    $basePath = str_replace($docRootReal, '', $appDir);
+}
+// Ultimate fallback if nothing matches (usually means it's at the web root)
+if ($basePath === $appDir || strpos($basePath, '/home/') === 0 || strpos($basePath, '/var/') === 0) {
+    $basePath = '';
+}
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'];
 

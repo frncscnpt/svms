@@ -277,7 +277,7 @@ function getManifestDataUri() {
         
         if (isset($manifest['icons']) && is_array($manifest['icons'])) {
             foreach ($manifest['icons'] as &$icon) {
-                if (isset($icon['src']) && str_starts_with($icon['src'], '/')) {
+                if (isset($icon['src']) && strpos($icon['src'], '/') === 0) {
                     $icon['src'] = $baseUrl . $icon['src'];
                 }
             }

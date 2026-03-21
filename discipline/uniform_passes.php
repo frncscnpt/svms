@@ -86,18 +86,20 @@ $breadcrumbs = ['Dashboard' => '/discipline/dashboard.php', 'Uniform Passes' => 
 require_once __DIR__ . '/../includes/header.php';
 
 // Auto-expire old active passes
-$pdo->exec("UPDATE uniform_passes SET status = 'expired' WHERE status = 'active' AND valid_date < CURDATE()");
+$pdo->prepare("UPDATE uniform_passes SET status = 'expired' WHERE status = 'active' AND valid_date < ?")->execute([date('Y-m-d')]);
 
 // Get today's active passes
-$activePasses = $pdo->query("
+$stmtActivePasses = $pdo->prepare("
     SELECT up.*, s.first_name, s.last_name, s.student_number, s.grade_level, s.section, s.photo,
            u.full_name AS issued_by_name
     FROM uniform_passes up
     JOIN students s ON up.student_id = s.id
     JOIN users u ON up.issued_by = u.id
-    WHERE up.status = 'active' AND up.valid_date = CURDATE()
+    WHERE up.status = 'active' AND up.valid_date = ?
     ORDER BY up.created_at DESC
-")->fetchAll();
+");
+$stmtActivePasses->execute([date('Y-m-d')]);
+$activePasses = $stmtActivePasses->fetchAll();
 
 // Search history
 $search = $_GET['search'] ?? '';
@@ -125,7 +127,9 @@ $historyResult = paginate(
 $students = $pdo->query("SELECT id, student_number, first_name, last_name, grade_level, section FROM students WHERE status = 'active' ORDER BY last_name, first_name")->fetchAll();
 
 // Stats
-$todayCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes WHERE valid_date = CURDATE()")->fetchColumn();
+$todayCountStmt = $pdo->prepare("SELECT COUNT(*) FROM uniform_passes WHERE valid_date = ?");
+$todayCountStmt->execute([date('Y-m-d')]);
+$todayCount = $todayCountStmt->fetchColumn();
 $activeCount = count($activePasses);
 $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
 ?>

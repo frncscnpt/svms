@@ -26,17 +26,17 @@ if (!$studentId) {
 }
 
 // Auto-expire old passes
-$pdo->exec("UPDATE uniform_passes SET status = 'expired' WHERE status = 'active' AND valid_date < CURDATE()");
+$pdo->prepare("UPDATE uniform_passes SET status = 'expired' WHERE status = 'active' AND valid_date < ?")->execute([date('Y-m-d')]);
 
 // Get active pass for today
 $stmt = $pdo->prepare("
     SELECT up.*, u.full_name AS issued_by_name
     FROM uniform_passes up
     JOIN users u ON up.issued_by = u.id
-    WHERE up.student_id = ? AND up.status = 'active' AND up.valid_date = CURDATE()
+    WHERE up.student_id = ? AND up.status = 'active' AND up.valid_date = ?
     ORDER BY up.created_at DESC LIMIT 1
 ");
-$stmt->execute([$studentId]);
+$stmt->execute([$studentId, date('Y-m-d')]);
 $activePass = $stmt->fetch();
 
 // Get pass history
