@@ -62,6 +62,11 @@ $currentUser = getCurrentUser();
             padding-bottom: 15px;
             margin-bottom: 30px;
         }
+        .school-logo {
+            width: 70px;
+            height: auto;
+            margin-bottom: 10px;
+        }
         .header h1 {
             font-family: 'Times New Roman', serif;
             font-size: 24px;
@@ -220,6 +225,7 @@ $currentUser = getCurrentUser();
     
     <div class="page">
         <div class="header">
+            <img src="<?= BASE_PATH ?>/assets/img/logo.png" alt="Logo" class="school-logo">
             <h1>Lyceum of Subic Bay</h1>
             <h2>Student Violation Management System (SVMS)</h2>
             <div class="report-title">Official Violations Report</div>
