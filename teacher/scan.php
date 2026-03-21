@@ -202,10 +202,34 @@ $hideScanNav = true;
 
 <?php endif; ?>
 
+<!-- Scan Error Modal -->
+<div class="modal fade" id="scanErrorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:360px;">
+        <div class="modal-content" style="border-radius:18px;border:1px solid #ede9ee;">
+            <div class="modal-body text-center" style="padding:32px 24px 20px;">
+                <div style="width:52px;height:52px;background:rgba(220,53,69,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <i class="bi bi-qr-code" style="font-size:24px;color:#dc3545;"></i>
+                </div>
+                <h6 style="font-weight:700;margin-bottom:6px;">QR Code Not Detected</h6>
+                <p id="scanErrorMsg" style="font-size:13px;color:var(--text-muted);margin-bottom:0;">Could not read QR code from image.</p>
+            </div>
+            <div class="modal-footer" style="border:none;padding:0 24px 24px;">
+                <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php
 $extraJS = '<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 let html5QrCode;
+
+function showScanError(msg) {
+    document.getElementById("scanErrorMsg").textContent = msg || "Could not read QR code from image.";
+    var modal = document.getElementById("scanErrorModal");
+    if (modal) { new bootstrap.Modal(modal).show(); } else { alert(msg); }
+}
 
 function startScanner() {
     document.getElementById("scannerSection").style.display = "block";
@@ -324,10 +348,10 @@ if (galleryInput) {
         const file = this.files[0];
         if (!file) return;
         try {
-            const result = await Html5Qrcode.scanFile(file, false);
-            lookupStudent(result);
+            const result = await Html5Qrcode.scanFile(file, true);
+            handleScan(result);
         } catch (e) {
-            alert("Could not read QR code from image. Please try a clearer photo.");
+            showScanError("Could not read QR code from image. Please try a clearer photo.");
         }
         this.value = "";
     });

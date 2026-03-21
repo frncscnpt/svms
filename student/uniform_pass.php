@@ -136,7 +136,7 @@ if ($activePass) {
         text: ' . json_encode($activePass['pass_code']) . ',
         width: 200,
         height: 200,
-        colorDark: "#065f46",
+        colorDark: "#000000",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
     });
@@ -147,24 +147,52 @@ else: // DESKTOP
 ?>
 
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-9">
         <?php if ($activePass): ?>
-        <div class="card-panel mb-4">
-            <div style="background:linear-gradient(135deg, #065f46, #059669); padding:28px; text-align:center; color:white; border-radius:18px 18px 0 0;">
-                <i class="bi bi-check-circle-fill" style="font-size:42px; display:block; margin-bottom:8px;"></i>
-                <h4 style="color:white; margin:0;">Temporary Uniform Pass</h4>
-                <small style="color:rgba(255,255,255,0.7);">Lyceum of Subic Bay — Valid Today</small>
+        <div class="card-panel mb-4" style="overflow:hidden;">
+            <!-- Green header banner -->
+            <div style="background:linear-gradient(135deg, #065f46, #059669); padding:24px 28px; color:white; display:flex; align-items:center; gap:16px;">
+                <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="bi bi-check-circle-fill" style="font-size:24px;"></i>
+                </div>
+                <div>
+                    <h5 style="color:white;margin:0;font-size:16px;font-weight:700;">Temporary Uniform Pass</h5>
+                    <small style="color:rgba(255,255,255,0.7);">Lyceum of Subic Bay &mdash; Valid Today</small>
+                </div>
+                <span class="ms-auto" style="background:rgba(255,255,255,0.2);color:white;font-size:11px;font-weight:700;padding:5px 14px;border-radius:99px;letter-spacing:0.5px;">ACTIVE</span>
             </div>
-            <div class="panel-body text-center" style="padding:28px;">
-                <div id="passQRCode" style="display:inline-block; padding:16px; background:#f8fdf8; border-radius:16px; border:2px solid #d1fae5; margin-bottom:16px;"></div>
-                <p style="font-size:12px; color:var(--text-muted);">Show this QR code to your teacher for verification</p>
-            </div>
-            <div style="padding:0;">
-                <div class="d-flex justify-content-between py-3 px-4 border-bottom" style="font-size:13px;"><span class="text-muted">Pass Code</span><code style="font-size:12px;"><?= sanitize($activePass['pass_code']) ?></code></div>
-                <div class="d-flex justify-content-between py-3 px-4 border-bottom" style="font-size:13px;"><span class="text-muted">Reason</span><strong><?= sanitize($activePass['reason']) ?></strong></div>
-                <div class="d-flex justify-content-between py-3 px-4 border-bottom" style="font-size:13px;"><span class="text-muted">Valid Date</span><strong><?= formatDate($activePass['valid_date']) ?></strong></div>
-                <div class="d-flex justify-content-between py-3 px-4 border-bottom" style="font-size:13px;"><span class="text-muted">Issued By</span><strong><?= sanitize($activePass['issued_by_name']) ?></strong></div>
-                <div class="d-flex justify-content-between py-3 px-4" style="font-size:13px;"><span class="text-muted">Issued At</span><strong><?= formatDateTime($activePass['created_at']) ?></strong></div>
+
+            <!-- Body: QR left, details right -->
+            <div style="display:flex;flex-wrap:wrap;">
+                <!-- QR Code panel -->
+                <div style="flex:0 0 240px;padding:28px 20px;text-align:center;border-right:1px solid #ede9ee;background:#f8fdf8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
+                    <div id="passQRCode" style="display:inline-block;padding:10px;background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.07);"></div>
+                    <p style="font-size:11px;color:var(--text-muted);margin:0;line-height:1.5;">Show this QR code to your<br>teacher for verification</p>
+                </div>
+
+                <!-- Details panel -->
+                <div style="flex:1;min-width:200px;">
+                    <div class="d-flex justify-content-between align-items-center py-3 px-4 border-bottom" style="font-size:13px;">
+                        <span class="text-muted">Pass Code</span>
+                        <code style="font-size:11px;color:var(--primary);"><?= sanitize($activePass['pass_code']) ?></code>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-3 px-4 border-bottom" style="font-size:13px;">
+                        <span class="text-muted">Reason</span>
+                        <strong style="max-width:200px;text-align:right;"><?= sanitize($activePass['reason']) ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-3 px-4 border-bottom" style="font-size:13px;">
+                        <span class="text-muted">Valid Date</span>
+                        <strong><?= formatDate($activePass['valid_date']) ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-3 px-4 border-bottom" style="font-size:13px;">
+                        <span class="text-muted">Issued By</span>
+                        <strong><?= sanitize($activePass['issued_by_name']) ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-3 px-4" style="font-size:13px;">
+                        <span class="text-muted">Issued At</span>
+                        <strong><?= formatDateTime($activePass['created_at']) ?></strong>
+                    </div>
+                </div>
             </div>
         </div>
         <?php else: ?>
@@ -212,9 +240,9 @@ if ($activePass) {
     <script>
     new QRCode(document.getElementById("passQRCode"), {
         text: ' . json_encode($activePass['pass_code']) . ',
-        width: 220,
-        height: 220,
-        colorDark: "#065f46",
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
     });

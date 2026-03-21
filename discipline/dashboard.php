@@ -89,10 +89,23 @@ $recentActions = $pdo->query("
         <div class="card-panel h-100">
             <div class="panel-header">
                 <h5 class="panel-title"><i class="bi bi-qr-code-scan"></i> Quick Student Scan</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="camToggleLabel" style="font-size:11px;color:var(--text-muted);font-weight:600;">OFF</span>
+                    <div class="cam-toggle-wrap" onclick="toggleCamera()" title="Toggle camera">
+                        <input type="checkbox" id="camToggle" style="display:none;">
+                        <div class="cam-toggle-track cam-off" id="camToggleTrack">
+                            <div class="cam-toggle-thumb"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="panel-body text-center" style="padding:16px;">
                 <div id="scannerSection">
-                    <div id="qrReader" style="width:100%;border-radius:8px;overflow:hidden;margin-bottom:10px;"></div>
+                    <div id="qrReader" style="width:100%;border-radius:8px;overflow:hidden;margin-bottom:10px;display:none;"></div>
+                    <div id="camOffPlaceholder" style="display:flex;width:100%;border-radius:8px;background:#f7f2f8;border:1.5px dashed #ede9ee;min-height:200px;align-items:center;justify-content:center;flex-direction:column;gap:8px;margin-bottom:10px;">
+                        <i class="bi bi-camera-video-off" style="font-size:32px;color:var(--text-muted);"></i>
+                        <span style="font-size:12px;color:var(--text-muted);">Camera is off</span>
+                    </div>
                     <p class="text-muted" style="font-size:12px;margin-bottom:0;">Scan student QR code to view profile or file action</p>
                 </div>
 
@@ -270,10 +283,36 @@ function lookupStudent(qrData) {
 
 function resetScanner() { startScanner(); }
 
+let cameraOn = false;
+
+function toggleCamera() {
+    cameraOn = !cameraOn;
+    const label = document.getElementById("camToggleLabel");
+    const track = document.getElementById("camToggleTrack");
+    const qrReader = document.getElementById("qrReader");
+    const placeholder = document.getElementById("camOffPlaceholder");
+
+    if (cameraOn) {
+        label.textContent = "ON";
+        track.classList.remove("cam-off");
+        qrReader.style.display = "block";
+        placeholder.style.display = "none";
+        startScanner();
+    } else {
+        label.textContent = "OFF";
+        track.classList.add("cam-off");
+        if (html5QrCode) {
+            html5QrCode.stop().catch(() => {});
+        }
+        qrReader.style.display = "none";
+        placeholder.style.display = "flex";
+    }
+}
+
 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    startScanner();
+    // camera starts off by default — user toggles on
 } else {
-    document.getElementById("scannerSection").innerHTML = "<p class=\"text-muted text-center py-4\">Camera not supported on this browser/device.</p>";
+    document.getElementById("camOffPlaceholder").innerHTML = `<i class="bi bi-camera-video-off" style="font-size:32px;color:var(--text-muted);"></i><span style="font-size:12px;color:var(--text-muted);">Camera not supported</span>`;
 }
 </script>';
 require_once __DIR__ . '/../includes/footer.php';

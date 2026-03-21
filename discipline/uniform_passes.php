@@ -132,30 +132,30 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
 
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="stat-panel">
-            <div class="stat-icon bg-primary-soft text-primary-custom"><i class="bi bi-card-checklist"></i></div>
-            <div class="stat-info">
-                <div class="stat-value"><?= $activeCount ?></div>
-                <div class="stat-label">Active Today</div>
+        <div class="stat-card stat-purple">
+            <div class="stat-header">
+                <div class="stat-icon"><i class="bi bi-card-checklist"></i></div>
             </div>
+            <div class="stat-value"><?= $activeCount ?></div>
+            <div class="stat-label">Active Today</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="stat-panel">
-            <div class="stat-icon bg-info-soft text-info"><i class="bi bi-calendar-check"></i></div>
-            <div class="stat-info">
-                <div class="stat-value"><?= $todayCount ?></div>
-                <div class="stat-label">Issued Today</div>
+        <div class="stat-card stat-blue">
+            <div class="stat-header">
+                <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
             </div>
+            <div class="stat-value"><?= $todayCount ?></div>
+            <div class="stat-label">Issued Today</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="stat-panel">
-            <div class="stat-icon bg-secondary-soft text-secondary"><i class="bi bi-archive"></i></div>
-            <div class="stat-info">
-                <div class="stat-value"><?= $totalCount ?></div>
-                <div class="stat-label">Total All Time</div>
+        <div class="stat-card stat-green">
+            <div class="stat-header">
+                <div class="stat-icon"><i class="bi bi-archive"></i></div>
             </div>
+            <div class="stat-value"><?= $totalCount ?></div>
+            <div class="stat-label">Total All Time</div>
         </div>
     </div>
 </div>
@@ -197,9 +197,9 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
                         <a href="print_pass.php?id=<?= $p['id'] ?>" class="action-btn text-primary-custom" title="Print Pass" target="_blank">
                             <i class="bi bi-printer"></i>
                         </a>
-                        <a href="?revoke=<?= $p['id'] ?>" class="action-btn text-danger" title="Revoke Pass" onclick="return confirm('Revoke this pass?')">
+                        <button type="button" class="action-btn text-danger" title="Revoke Pass" onclick="confirmRevoke(<?= $p['id'] ?>)">
                             <i class="bi bi-x-circle"></i>
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -253,6 +253,32 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
     </div>
     <?= renderPagination($historyResult, '?search=' . urlencode($search)) ?>
 </div>
+
+<!-- Revoke Confirm Modal -->
+<div class="modal fade" id="revokeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
+        <div class="modal-content" style="border-radius:18px;border:1px solid #ede9ee;">
+            <div class="modal-body text-center" style="padding:32px 24px 20px;">
+                <div style="width:52px;height:52px;background:rgba(220,53,69,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <i class="bi bi-x-circle" style="font-size:24px;color:#dc3545;"></i>
+                </div>
+                <h6 style="font-weight:700;margin-bottom:6px;">Revoke this pass?</h6>
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:0;">The student will be notified and the pass will no longer be valid.</p>
+            </div>
+            <div class="modal-footer" style="border:none;padding:0 24px 24px;gap:8px;">
+                <button type="button" class="btn btn-outline-secondary flex-fill" data-bs-dismiss="modal">Cancel</button>
+                <a href="#" id="revokeConfirmBtn" class="btn btn-danger flex-fill" style="border-radius:10px;">Revoke Pass</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmRevoke(id) {
+    document.getElementById('revokeConfirmBtn').href = '?revoke=' + id;
+    new bootstrap.Modal(document.getElementById('revokeModal')).show();
+}
+</script>
 
 <!-- Issue Pass Modal -->
 <div class="modal fade" id="issueModal" tabindex="-1">
