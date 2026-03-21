@@ -52,9 +52,6 @@ $isStudent   = $currentUser['role'] === 'student';
                 <?php endif; ?>
             </a>
             <?php if ($isTeacher): ?>
-            <a href="<?= BASE_PATH ?>/teacher/scan.php" class="m-topbar-btn">
-                <i class="bi bi-qr-code-scan"></i>
-            </a>
             <?php endif; ?>
         </div>
     </header>

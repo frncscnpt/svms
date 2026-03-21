@@ -444,18 +444,68 @@ body {
 /* ── Form ── */
 .m-form .form-control,
 .m-form .form-select {
+    width: 100%;
     padding: 12px 14px;
     font-size: 14px;
     border-radius: 12px;
     border: 1.5px solid #ede9ee;
     font-family: 'Chillax', 'Inter', sans-serif;
     background: #fdf8fd;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.m-form .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%237e747c' d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+}
+
+.m-form input[type="datetime-local"].form-control {
+    -webkit-appearance: none;
+    appearance: none;
+    color: #130117;
+    min-height: 48px;
+}
+
+.m-form input[type="datetime-local"].form-control::-webkit-calendar-picker-indicator {
+    opacity: 0.5;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+}
+
+.m-form input[type="file"].form-control {
+    padding: 10px 14px;
+    font-size: 13px;
+}
+
+.m-form .form-group {
+    margin-bottom: 16px;
+}
+
+.m-form .form-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #4c444b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    display: block;
 }
 
 .m-form .form-control:focus,
 .m-form .form-select:focus {
     border-color: #2e1731;
     box-shadow: 0 0 0 3px rgba(46,23,49,0.08);
+    outline: none;
+}
+
+.m-form textarea.form-control {
+    resize: vertical;
+    min-height: 90px;
 }
 
 .m-submit-btn {
@@ -482,31 +532,33 @@ body {
 /* ── Bottom Navigation ── */
 .m-bottom-nav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255,255,255,0.88);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(207,195,203,0.2);
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(207, 195, 203, 0.2);
     display: flex;
     justify-content: space-around;
-    align-items: center;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    align-items: flex-end;
+    padding: 7px 12px calc(7px + env(safe-area-inset-bottom));
     z-index: 1040;
-    border-radius: 24px 24px 0 0;
-    box-shadow: 0 -8px 32px rgba(46,23,49,0.06);
+    border-radius: 99px;
+    box-shadow: 0 8px 32px rgba(19, 1, 23, 0.14), 0 2px 8px rgba(19, 1, 23, 0.08);
 }
 
 .m-nav-item {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 3px;
-    padding: 8px 16px;
-    border-radius: 16px;
-    color: #7e747c;
-    font-size: 10px;
+    padding: 6px 0;
+    border-radius: 99px;
+    color: #b0a8b4;
+    font-size: 9px;
     font-weight: 700;
     text-decoration: none;
     text-transform: uppercase;
@@ -515,11 +567,11 @@ body {
     position: relative;
 }
 
-.m-nav-item i { font-size: 20px; transition: transform 0.2s ease; }
+.m-nav-item i { font-size: 17px; }
 
 .m-nav-item.active {
-    background: #ebdeee;
-    color: #2e1731;
+    background: transparent;
+    color: #130117;
 }
 
 .m-nav-item:active { transform: scale(0.92); }
@@ -710,3 +762,352 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
+
+/* ── Form card panels (used in teacher/report.php on mobile) ── */
+.mobile-app .card-panel {
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px solid #ede9ee;
+    overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: none;
+}
+
+.mobile-app .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f0eff4;
+}
+
+.mobile-app .panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2e1731;
+    margin: 0;
+}
+
+.mobile-app .panel-body {
+    padding: 16px 18px;
+}
+
+.mobile-app .panel-body .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* ── GCash-style center FAB ── */
+.m-nav-fab-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    position: relative;
+    margin-bottom: 2px;
+}
+
+.m-nav-fab {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #130117;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-top: -30px;
+    box-shadow: 0 4px 16px rgba(19, 1, 23, 0.22);
+    border: 3px solid rgba(253, 248, 253, 0.72);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.m-nav-fab.active { background: #2e1731; }
+
+.m-nav-fab:hover,
+.m-nav-fab:active { color: #ffffff; transform: scale(0.94); }
+
+.m-nav-fab-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: #130117;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ── Scan Bottom Sheet ── */
+.m-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(19, 1, 23, 0.4);
+    z-index: 2000;
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.m-sheet-backdrop.open {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.m-sheet {
+    width: 100%;
+    background: #ffffff;
+    border-radius: 24px 24px 0 0;
+    padding: 12px 20px calc(32px + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.34, 1.1, 0.64, 1);
+}
+
+.m-sheet-backdrop.open .m-sheet {
+    transform: translateY(0);
+}
+
+.m-sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: #ede9ee;
+    border-radius: 99px;
+    margin: 0 auto 20px;
+}
+
+.m-sheet-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #b0a8b4;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+}
+
+.m-sheet-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f7f2f8;
+    text-decoration: none;
+    color: inherit;
+    transition: opacity 0.15s ease;
+}
+
+.m-sheet-option:last-of-type { border-bottom: none; }
+.m-sheet-option:active { opacity: 0.6; }
+
+.m-sheet-option-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.m-sheet-option-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.m-sheet-option-text strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: #130117;
+}
+
+.m-sheet-option-text span {
+    font-size: 12px;
+    color: #7e747c;
+}
+
+.m-sheet-cancel {
+    width: 100%;
+    margin-top: 12px;
+    padding: 13px;
+    background: #f7f2f8;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Chillax', 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #4c444b;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.m-sheet-cancel:active { background: #ede9ee; }
+
+/* ── Full-screen QR Scanner (Maya-style) ── */
+.m-scanner-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: #000;
+}
+
+.m-scanner-feed {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* html5-qrcode fills its container */
+.m-scanner-feed > * { width: 100% !important; height: 100% !important; }
+.m-scanner-feed video { width: 100% !important; height: 100% !important; object-fit: cover; }
+
+/* hide the default html5-qrcode UI chrome */
+.m-scanner-feed #qr-shaded-region,
+.m-scanner-feed img { display: none !important; }
+
+.m-scanner-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(env(safe-area-inset-top) + 16px) 0 calc(env(safe-area-inset-bottom) + 24px);
+    background: transparent;
+}
+
+/* Four dark panels surrounding the frame cutout */
+.m-scanner-overlay::before,
+.m-scanner-overlay::after { display: none; }
+
+.m-scan-shadow-top,
+.m-scan-shadow-bottom,
+.m-scan-shadow-left,
+.m-scan-shadow-right { display: none; }
+
+/* Frame is absolutely centered on screen */
+.m-scanner-frame-wrap {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Dark surround via huge box-shadow on the frame — always perfectly aligned */
+.m-scanner-frame {
+    width: 240px;
+    height: 240px;
+    position: relative;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.65);
+    border-radius: 2px;
+}
+
+/* Dark sides handled by shadow panels above */
+
+.m-scanner-topbar {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+
+.m-scanner-back {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+    text-decoration: none;
+}
+
+.m-scanner-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.01em;
+}
+
+/* Viewfinder — handled above */
+
+/* Corner brackets */
+.m-corner {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-color: #fff;
+    border-style: solid;
+}
+.m-corner.tl { top: 0; left: 0;  border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.m-corner.tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.m-corner.bl { bottom: 0; left: 0;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.m-corner.br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+/* Scan line */
+.m-scan-line {
+    position: absolute;
+    left: 4px; right: 4px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+    border-radius: 2px;
+    animation: scanMove 2s ease-in-out infinite;
+}
+
+@keyframes scanMove {
+    0%   { top: 4px; opacity: 1; }
+    50%  { top: calc(100% - 6px); opacity: 1; }
+    100% { top: 4px; opacity: 1; }
+}
+
+.m-scanner-hint {
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    text-align: center;
+    margin: 0;
+}
+
+/* Bottom action buttons */
+.m-scanner-actions {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: 10px;
+    padding: 0 20px;
+    width: 100%;
+}
+
+.m-scanner-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 12px;
+    background: rgba(30, 30, 30, 0.85);
+    border: none;
+    border-radius: 18px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    letter-spacing: -0.01em;
+}
+
+.m-scanner-btn i { font-size: 17px; }
+.m-scanner-btn:active { background: rgba(60, 60, 60, 0.9); color: #fff; }

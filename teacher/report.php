@@ -151,7 +151,15 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
             </div>
             <div class="form-group">
                 <label class="form-label">Date & Time</label>
+                <?php if (IS_MOBILE): ?>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <input type="date" class="form-control" id="date_part" value="<?= date('Y-m-d') ?>">
+                    <input type="time" class="form-control" id="time_part" value="<?= date('H:i') ?>">
+                </div>
+                <input type="hidden" name="date_occurred" id="date_occurred_combined">
+                <?php else: ?>
                 <input type="datetime-local" class="form-control" name="date_occurred" value="<?= date('Y-m-d\TH:i') ?>">
+                <?php endif; ?>
             </div>
             <div class="form-group mb-0">
                 <label class="form-label">Evidence (Optional)</label>
@@ -165,6 +173,18 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
         <i class="bi bi-send-fill me-1"></i> Submit Report
     </button>
 </form>
+<?php if (IS_MOBILE): ?>
+<script>
+    // Combine date + time into hidden field before submit
+    document.querySelector('form').addEventListener('submit', function() {
+        const d = document.getElementById('date_part')?.value;
+        const t = document.getElementById('time_part')?.value;
+        if (d && t) {
+            document.getElementById('date_occurred_combined').value = d + ' ' + t + ':00';
+        }
+    });
+</script>
+<?php endif; ?>
 </div><?= IS_MOBILE ? '' : '</div>' ?>
 
 <?php
