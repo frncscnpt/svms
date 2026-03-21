@@ -62,14 +62,14 @@ if ($isMobileRole) {
     </div>
 
     <?php if (empty($notifications)): ?>
-        <div class="mobile-card text-center p-4">
+        <div class="m-card text-center p-4">
             <i class="bi bi-bell-slash d-block mb-2" style="font-size: 36px; color: var(--text-muted);"></i>
             <h6 style="color: var(--text-secondary);">No notifications yet</h6>
             <p class="text-muted mb-0" style="font-size: 13px;">When you have alerts or updates, they will appear here.</p>
         </div>
     <?php else: ?>
         <?php foreach ($notifications as $notif): ?>
-            <div class="mobile-card mb-2 p-3" style="<?= $notif['is_read'] ? 'opacity: 0.7;' : 'border-left: 3px solid var(--accent);' ?>">
+            <div class="m-card mb-2" style="padding:16px 18px;<?= $notif['is_read'] ? 'opacity:0.7;' : 'border-left:3px solid var(--accent);' ?>">
                 <div class="d-flex">
                     <div class="notif-icon-circle me-3 bg-<?= $notif['type'] ?>-soft text-<?= $notif['type'] ?>" style="width: 36px; height: 36px; min-width: 36px;">
                         <i class="bi <?= $notif['type'] == 'danger' ? 'bi-exclamation-triangle' : ($notif['type'] == 'warning' ? 'bi-exclamation-circle' : ($notif['type'] == 'success' ? 'bi-check-circle' : 'bi-info-circle')) ?>"></i>
@@ -106,20 +106,20 @@ if ($isMobileRole) {
 
 <?php else: ?>
 <!-- DESKTOP LAYOUT -->
-<div class="row animate-fadeIn">
+<div class="row">
     <div class="col-md-10 col-lg-8 mx-auto">
         <div class="card-panel">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="mb-0 fw-bold">Notification Center</h5>
+            <div class="panel-header">
+                <h5 class="panel-title"><i class="bi bi-bell-fill"></i> Notification Center</h5>
                 <?php if ($totalNotifs > 0): ?>
                 <form method="POST">
-                    <button type="submit" name="mark_all_read" class="btn btn-outline-custom btn-sm">
+                    <button type="submit" name="mark_all_read" class="btn-outline-custom" style="font-size:12px;padding:6px 14px;">
                         <i class="bi bi-check2-all me-1"></i> Mark All as Read
                     </button>
                 </form>
                 <?php endif; ?>
             </div>
-
+            <div class="panel-body">
             <?php if (empty($notifications)): ?>
                 <div class="empty-state">
                     <i class="bi bi-bell-slash"></i>
@@ -127,32 +127,26 @@ if ($isMobileRole) {
                     <p>When you have alerts or updates, they will appear here.</p>
                 </div>
             <?php else: ?>
-                <div class="notif-full-list">
-                    <?php foreach ($notifications as $notif): ?>
-                        <div class="notif-item-full p-3 rounded-3 mb-3 border <?= $notif['is_read'] ? 'bg-light' : 'bg-white border-primary-custom' ?>" style="<?= $notif['is_read'] ? '' : 'border-left: 4px solid var(--accent) !important;' ?>">
-                            <div class="d-flex">
-                                <div class="notif-icon-circle me-3 bg-<?= $notif['type'] ?>-soft text-<?= $notif['type'] ?>">
-                                    <i class="bi <?= $notif['type'] == 'danger' ? 'bi-exclamation-triangle' : ($notif['type'] == 'warning' ? 'bi-exclamation-circle' : ($notif['type'] == 'success' ? 'bi-check-circle' : 'bi-info-circle')) ?>"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <h6 class="mb-0 fw-bold text-primary-custom"><?= sanitize($notif['title']) ?></h6>
-                                        <small class="text-muted"><?= date('M d, Y h:i A', strtotime($notif['created_at'])) ?></small>
-                                    </div>
-                                    <p class="mb-2 text-secondary" style="font-size: 14px;"><?= sanitize($notif['message']) ?></p>
-                                    <?php if ($notif['link']): ?>
-                                        <a href="<?= BASE_PATH . $notif['link'] ?>&mark_read=<?= $notif['id'] ?>" class="btn btn-sm btn-accent" style="font-size: 12px;">
-                                            View Details
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
+                <?php foreach ($notifications as $notif): ?>
+                    <div class="d-flex gap-3 p-3 rounded-3 mb-2 border" style="<?= $notif['is_read'] ? 'background:#fdf8fd;' : 'background:#fff;border-left:4px solid var(--accent) !important;' ?>">
+                        <div class="notif-icon-circle bg-<?= $notif['type'] ?>-soft text-<?= $notif['type'] ?>" style="flex-shrink:0;">
+                            <i class="bi <?= $notif['type'] == 'danger' ? 'bi-exclamation-triangle' : ($notif['type'] == 'warning' ? 'bi-exclamation-circle' : ($notif['type'] == 'success' ? 'bi-check-circle' : 'bi-info-circle')) ?>"></i>
                         </div>
-                    <?php endforeach; ?>
-                </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0" style="font-size:14px;font-weight:700;color:var(--primary);"><?= sanitize($notif['title']) ?></h6>
+                                <small class="text-muted"><?= date('M d, Y h:i A', strtotime($notif['created_at'])) ?></small>
+                            </div>
+                            <p class="mb-2 text-secondary" style="font-size: 13px;"><?= sanitize($notif['message']) ?></p>
+                            <?php if ($notif['link']): ?>
+                                <a href="<?= BASE_PATH . $notif['link'] ?>&mark_read=<?= $notif['id'] ?>" class="btn-accent" style="font-size:12px;padding:5px 14px;">View Details</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
 
                 <?php if ($totalPages > 1): ?>
-                    <nav aria-label="Page navigation" class="mt-4">
+                    <nav class="mt-4">
                         <ul class="pagination justify-content-center">
                             <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
                                 <a class="page-link" href="?page=<?= $page - 1 ?>">Previous</a>
@@ -169,6 +163,7 @@ if ($isMobileRole) {
                     </nav>
                 <?php endif; ?>
             <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>

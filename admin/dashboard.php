@@ -10,11 +10,21 @@ requireRole('admin');
 $pdo = getDBConnection();
 
 // Stats
-$totalStudents = $pdo->query("SELECT COUNT(*) FROM students WHERE status='active'")->fetchColumn();
-$totalViolations = $pdo->query("SELECT COUNT(*) FROM violations")->fetchColumn();
-$pendingViolations = $pdo->query("SELECT COUNT(*) FROM violations WHERE status='pending'")->fetchColumn();
-$totalUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE status='active'")->fetchColumn();
+$totalStudents       = $pdo->query("SELECT COUNT(*) FROM students WHERE status='active'")->fetchColumn();
+$totalViolations     = $pdo->query("SELECT COUNT(*) FROM violations")->fetchColumn();
+$pendingViolations   = $pdo->query("SELECT COUNT(*) FROM violations WHERE status='pending'")->fetchColumn();
+$totalUsers          = $pdo->query("SELECT COUNT(*) FROM users WHERE status='active'")->fetchColumn();
 $thisMonthViolations = $pdo->query("SELECT COUNT(*) FROM violations WHERE MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())")->fetchColumn();
+$lastMonthViolations = $pdo->query("SELECT COUNT(*) FROM violations WHERE MONTH(created_at)=MONTH(DATE_SUB(NOW(),INTERVAL 1 MONTH)) AND YEAR(created_at)=YEAR(DATE_SUB(NOW(),INTERVAL 1 MONTH))")->fetchColumn();
+
+// Trend badge helper
+function trendBadge($current, $previous, $label = 'vs last month') {
+    if ($previous == 0) return '<span class="stat-trend neutral">— ' . $label . '</span>';
+    $diff = $current - $previous;
+    $pct  = round(abs($diff / $previous) * 100);
+    if ($diff > 0) return '<span class="stat-trend up"><i class="bi bi-arrow-up-short"></i>' . $pct . '% ' . $label . '</span>';
+    return '<span class="stat-trend down"><i class="bi bi-arrow-down-short"></i>' . $pct . '% ' . $label . '</span>';
+}
 
 // Recent violations
 $recentViolations = $pdo->query("
@@ -39,10 +49,11 @@ $violationsByType = $pdo->query("
 
 // Monthly trend
 $monthlyTrend = $pdo->query("
-    SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count
+    SELECT DATE_FORMAT(created_at, '%b %Y') as month, COUNT(*) as count
     FROM violations
     WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-    GROUP BY month ORDER BY month
+    GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%b %Y')
+    ORDER BY MIN(created_at)
 ")->fetchAll();
 
 // Recent activity
@@ -53,129 +64,57 @@ $recentActivity = $pdo->query("
 ")->fetchAll();
 ?>
 
-<!-- Stats Row -->
+<!-- ── Stat Cards ── -->
 <div class="row g-3 mb-4">
-    <div class="col-md-6 col-xl-3">
+    <div class="col-sm-6 col-xl-3">
         <div class="stat-card stat-purple animate-slideUp stagger-1">
             <div class="stat-header">
+                <div class="stat-label">Total Students</div>
                 <div class="stat-icon"><i class="bi bi-mortarboard-fill"></i></div>
             </div>
             <div class="stat-value"><?= number_format($totalStudents) ?></div>
-            <div class="stat-label">Total Students</div>
+            <div class="mt-2"><?= trendBadge($totalStudents, $totalStudents) ?></div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
+    <div class="col-sm-6 col-xl-3">
         <div class="stat-card stat-red animate-slideUp stagger-2">
             <div class="stat-header">
+                <div class="stat-label">Total Violations</div>
                 <div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
             </div>
             <div class="stat-value"><?= number_format($totalViolations) ?></div>
-            <div class="stat-label">Total Violations</div>
+            <div class="mt-2"><?= trendBadge($thisMonthViolations, $lastMonthViolations) ?></div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
+    <div class="col-sm-6 col-xl-3">
         <div class="stat-card stat-gold animate-slideUp stagger-3">
             <div class="stat-header">
+                <div class="stat-label">Pending Review</div>
                 <div class="stat-icon"><i class="bi bi-clock-fill"></i></div>
             </div>
             <div class="stat-value"><?= number_format($pendingViolations) ?></div>
-            <div class="stat-label">Pending Review</div>
+            <div class="mt-2"><span class="stat-trend <?= $pendingViolations > 0 ? 'down' : 'neutral' ?>"><?= $pendingViolations > 0 ? 'Needs attention' : 'All clear' ?></span></div>
         </div>
     </div>
-    <div class="col-md-6 col-xl-3">
+    <div class="col-sm-6 col-xl-3">
         <div class="stat-card stat-blue animate-slideUp stagger-4">
             <div class="stat-header">
+                <div class="stat-label">Active Users</div>
                 <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
             </div>
             <div class="stat-value"><?= number_format($totalUsers) ?></div>
-            <div class="stat-label">Active Users</div>
+            <div class="mt-2"><span class="stat-trend neutral">Staff &amp; faculty</span></div>
         </div>
     </div>
 </div>
 
-    </div>
-</div>
-
-<!-- QR Scanner Row -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card-panel">
-            <div class="panel-header">
-                <h5 class="panel-title"><i class="bi bi-qr-code-scan"></i> Quick Student Lookup</h5>
-            </div>
-            <div class="panel-body">
-                <div class="row align-items-center">
-                    <div class="col-md-5 text-center px-4 border-end">
-                        <div id="scannerSection">
-                            <div id="qrReader" style="width: 100%; max-width: 300px; margin: 0 auto; border-radius: 8px; overflow: hidden; margin-bottom: 10px;"></div>
-                            <p class="text-muted" style="font-size: 13px; margin-bottom: 0;">Scan student QR code to instantly view their profile</p>
-                            <button id="startScanBtn" class="btn btn-outline-custom mt-3" style="display:none;" onclick="startScanner()"><i class="bi bi-camera"></i> Start Scanner</button>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-7 ps-md-4 mt-4 mt-md-0">
-                        <!-- Result area -->
-                        <div id="resultSection" style="display:none;">
-                            <div class="d-flex align-items-center gap-3 mb-4">
-                                <div id="resultAvatarContainer"></div>
-                                <div>
-                                    <h5 id="resultName" class="mb-1" style="color: var(--primary);"></h5>
-                                    <div class="text-muted" id="resultNumber" style="font-family: monospace;"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="row g-3 mb-4 text-start">
-                                <div class="col-sm-6">
-                                    <div class="p-3 bg-light rounded border">
-                                        <small class="text-muted d-block text-uppercase" style="font-size:10px;letter-spacing:1px;">Grade & Section</small>
-                                        <strong id="resultGrade"></strong>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="p-3 bg-light rounded border">
-                                        <small class="text-muted d-block text-uppercase" style="font-size:10px;letter-spacing:1px;">Total Violations</small>
-                                        <strong><span class="badge badge-soft-danger fs-6" id="resultViolations"></span></strong>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="d-flex gap-2">
-                                <a href="#" id="viewProfileBtn" class="btn btn-primary-custom">
-                                    <i class="bi bi-person-lines-fill"></i> Edit Student Profile
-                                </a>
-                                <button class="btn btn-outline-secondary" onclick="resetScanner()">
-                                    <i class="bi bi-arrow-repeat"></i> Scan Another
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Error Section -->
-                        <div id="errorSection" style="display:none; text-align: center; padding: 40px 0;">
-                            <i class="bi bi-exclamation-circle text-danger mb-3" style="font-size: 48px;"></i>
-                            <h5 class="text-danger">Student Not Found</h5>
-                            <p id="errorMsg" class="text-muted">The scanned QR code does not belong to any active student.</p>
-                            <button class="btn btn-outline-secondary mt-2" onclick="resetScanner()">Try Again</button>
-                        </div>
-                        
-                        <!-- Initial Placeholder -->
-                        <div id="placeholderSection" class="text-center text-muted" style="padding: 40px 0;">
-                            <i class="bi bi-person-bounding-box" style="font-size: 64px; opacity: 0.2;"></i>
-                            <h6 class="mt-3">Awaiting Scan</h6>
-                            <p style="font-size:13px;">Student profile details will appear here once a QR code is recognized by the camera.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Charts Row -->
+<!-- ── Charts Row (2/3 + 1/3) ── -->
 <div class="row g-3 mb-4">
     <div class="col-lg-8">
-        <div class="card-panel">
+        <div class="card-panel h-100">
             <div class="panel-header">
-                <h5 class="panel-title"><i class="bi bi-graph-up"></i> Monthly Violation Trend</h5>
+                <h5 class="panel-title"><i class="bi bi-bar-chart-fill"></i> Violation Trend</h5>
+                <span class="badge badge-soft-secondary">Last 6 months</span>
             </div>
             <div class="panel-body">
                 <div class="chart-container"><canvas id="trendChart"></canvas></div>
@@ -183,7 +122,7 @@ $recentActivity = $pdo->query("
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="card-panel">
+        <div class="card-panel h-100">
             <div class="panel-header">
                 <h5 class="panel-title"><i class="bi bi-pie-chart-fill"></i> By Type</h5>
             </div>
@@ -194,8 +133,8 @@ $recentActivity = $pdo->query("
     </div>
 </div>
 
-<!-- Recent Violations -->
-<div class="row g-3">
+<!-- ── Recent Violations + Activity ── -->
+<div class="row g-3 mb-4">
     <div class="col-lg-8">
         <div class="card-panel">
             <div class="panel-header">
@@ -239,15 +178,19 @@ $recentActivity = $pdo->query("
             </div>
         </div>
     </div>
+
     <div class="col-lg-4">
-        <div class="card-panel">
+        <div class="card-panel h-100">
             <div class="panel-header">
                 <h5 class="panel-title"><i class="bi bi-activity"></i> Recent Activity</h5>
             </div>
             <div class="panel-body">
                 <div class="timeline">
-                    <?php foreach ($recentActivity as $act): ?>
-                    <div class="timeline-item">
+                    <?php foreach ($recentActivity as $i => $act):
+                        $colors = ['accent','success','warning','danger','info','accent'];
+                        $cls = $colors[$i % count($colors)];
+                    ?>
+                    <div class="timeline-item <?= $cls === 'success' ? 'success' : ($cls === 'warning' ? 'warning' : ($cls === 'danger' ? 'danger' : '')) ?>">
                         <div class="timeline-content">
                             <strong style="font-size:13px;"><?= sanitize($act['full_name'] ?? 'System') ?></strong>
                             <p style="font-size:12px;margin:2px 0 0;color:var(--text-secondary);"><?= sanitize($act['action']) ?></p>
@@ -264,14 +207,86 @@ $recentActivity = $pdo->query("
     </div>
 </div>
 
+<!-- ── QR Scanner (dark gradient card) ── -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="qr-scanner-card">
+            <!-- Faded background QR icon -->
+            <div class="qr-scanner-bg-icon"><i class="bi bi-qr-code"></i></div>
+
+            <div class="row align-items-center position-relative" style="z-index:1;">
+                <div class="col-md-5 text-center px-4" style="border-right: 1px solid rgba(255,255,255,0.1);">
+                    <div class="qr-scanner-label mb-3">
+                        <i class="bi bi-qr-code-scan me-2"></i>Quick Student Lookup
+                    </div>
+                    <div id="qrReader" style="width:100%;max-width:280px;margin:0 auto;border-radius:12px;overflow:hidden;"></div>
+                    <button id="startScanBtn" class="btn-qr-start mt-3" style="display:none;" onclick="startScanner()">
+                        <i class="bi bi-camera me-2"></i>Start Scanner
+                    </button>
+                    <p class="qr-scanner-hint mt-2">Point camera at student QR code</p>
+                </div>
+
+                <div class="col-md-7 ps-md-4 mt-4 mt-md-0">
+                    <!-- Placeholder -->
+                    <div id="placeholderSection" class="text-center" style="padding: 32px 0;">
+                        <i class="bi bi-person-bounding-box" style="font-size:56px;opacity:0.2;color:#fff;"></i>
+                        <h6 class="mt-3" style="color:rgba(255,255,255,0.7);">Awaiting Scan</h6>
+                        <p style="font-size:13px;color:rgba(255,255,255,0.4);">Student details will appear here once a QR code is recognized.</p>
+                    </div>
+
+                    <!-- Result -->
+                    <div id="resultSection" style="display:none;">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <div id="resultAvatarContainer"></div>
+                            <div>
+                                <h5 id="resultName" class="mb-1" style="color:#fff;font-size:18px;"></h5>
+                                <div id="resultNumber" style="color:rgba(255,255,255,0.55);font-family:monospace;font-size:13px;"></div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-4">
+                            <div class="col-sm-6">
+                                <div class="qr-result-chip">
+                                    <small style="color:rgba(255,255,255,0.45);font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;">Grade &amp; Section</small>
+                                    <strong id="resultGrade" style="color:#fff;font-size:14px;"></strong>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="qr-result-chip">
+                                    <small style="color:rgba(255,255,255,0.45);font-size:10px;text-transform:uppercase;letter-spacing:1px;display:block;">Violations</small>
+                                    <strong><span class="badge badge-soft-danger fs-6" id="resultViolations"></span></strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="#" id="viewProfileBtn" class="btn-qr-action-primary">
+                                <i class="bi bi-person-lines-fill me-1"></i>View Profile
+                            </a>
+                            <button class="btn-qr-action-secondary" onclick="resetScanner()">
+                                <i class="bi bi-arrow-repeat me-1"></i>Scan Again
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Error -->
+                    <div id="errorSection" style="display:none;text-align:center;padding:32px 0;">
+                        <i class="bi bi-exclamation-circle" style="font-size:44px;color:rgba(220,38,38,0.8);"></i>
+                        <h5 class="mt-3" style="color:#fff;">Student Not Found</h5>
+                        <p id="errorMsg" style="font-size:13px;color:rgba(255,255,255,0.45);">The scanned QR code does not match any active student.</p>
+                        <button class="btn-qr-action-secondary mt-2" onclick="resetScanner()">Try Again</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php
 $extraJS = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 const primaryColor = "#2e1731";
-const accentColor = "#ff5900";
-const colors = ["#2e1731","#ff5900","#6b3d70","#dc2626","#4f46e5","#16a34a","#d97706","#0ea5e9"];
+const colors = ["#2e1731","#6b3d70","#4f46e5","#dc2626","#16a34a","#d97706","#0ea5e9","#9333ea"];
 
-// Monthly Trend
+// Monthly Trend Bar Chart
 const trendCtx = document.getElementById("trendChart");
 if (trendCtx) {
     new Chart(trendCtx, {
@@ -283,8 +298,8 @@ if (trendCtx) {
                 data: ' . json_encode(array_map('intval', array_column($monthlyTrend, 'count'))) . ',
                 backgroundColor: primaryColor + "cc",
                 borderColor: primaryColor,
-                borderWidth: 1,
-                borderRadius: 6,
+                borderWidth: 0,
+                borderRadius: 8,
                 borderSkipped: false
             }]
         },
@@ -293,14 +308,14 @@ if (trendCtx) {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: "rgba(0,0,0,0.04)" } },
                 x: { grid: { display: false } }
             }
         }
     });
 }
 
-// By Type
+// By Type Doughnut
 const typeCtx = document.getElementById("typeChart");
 if (typeCtx) {
     new Chart(typeCtx, {
@@ -332,27 +347,23 @@ function startScanner() {
     document.getElementById("resultSection").style.display = "none";
     document.getElementById("errorSection").style.display = "none";
     document.getElementById("placeholderSection").style.display = "block";
-    
+
     html5QrCode = new Html5Qrcode("qrReader");
     html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
         (decodedText) => {
-            html5QrCode.stop().then(() => {
-                lookupStudent(decodedText);
-            }).catch(console.error);
+            html5QrCode.stop().then(() => lookupStudent(decodedText)).catch(console.error);
         },
         () => {}
-    ).catch(err => {
+    ).catch(() => {
         document.getElementById("qrReader").style.display = "none";
         document.getElementById("startScanBtn").style.display = "inline-block";
-        alert("Camera access required to scan QR codes.");
     });
 }
 
 function lookupStudent(qrData) {
     document.getElementById("placeholderSection").style.display = "none";
-    
     fetch("/api/qr_lookup.php?qr=" + encodeURIComponent(qrData))
         .then(r => r.json())
         .then(data => {
@@ -376,15 +387,12 @@ function lookupStudent(qrData) {
         });
 }
 
-function resetScanner() {
-    startScanner();
-}
+function resetScanner() { startScanner(); }
 
-// Init scanner
-if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     startScanner();
 } else {
-    document.getElementById("qrReader").innerHTML = "<p class=\'text-muted text-center py-4 border rounded bg-light\'>Camera not supported</p>";
+    document.getElementById("qrReader").innerHTML = "<p style=\"color:rgba(255,255,255,0.4);text-align:center;padding:32px 0;\">Camera not supported</p>";
 }
 </script>';
 require_once __DIR__ . '/../includes/footer.php';

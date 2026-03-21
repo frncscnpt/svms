@@ -124,8 +124,9 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
                                 <span class="text-muted" style="font-size: 13px;"><?= sanitize($student['student_number']) ?> · <?= sanitize($student['grade_level'] . ' - ' . $student['section']) ?></span>
                             </div>
                         </div>
-                        <a href="?_" class="btn btn-sm btn-outline-secondary mt-3"><i class="bi bi-arrow-repeat"></i> Change Student</a>
-                        <div class="form-group mb-0">
+                        <a href="<?= BASE_PATH ?>/admin/report_violation.php" class="btn btn-sm btn-outline-secondary mt-3"><i class="bi bi-arrow-repeat"></i> Change Student</a>
+                    <?php else: ?>
+                        <div class="form-group mb-2">
                             <label class="form-label">Select Student *</label>
                             <select class="form-select" name="student_id" required>
                                 <option value="">Select student...</option>
@@ -134,7 +135,7 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="text-center mt-3">
+                        <div class="text-center mt-2">
                             <button type="button" class="btn btn-outline-custom btn-sm" data-bs-toggle="modal" data-bs-target="#scanModal">
                                 <i class="bi bi-qr-code-scan"></i> Or Scan QR Code
                             </button>

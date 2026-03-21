@@ -1,0 +1,10 @@
+# Large media files
+assets/img/bg/
+uploads/
+
+# Environment / config
+config/database.php
+
+# OS
+.DS_Store
+Thumbs.db

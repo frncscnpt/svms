@@ -3,8 +3,17 @@
  * SVMS - Student: Violation History
  */
 $pageTitle = 'My Violations';
-$pageSubtitle = 'Complete violation history';
-require_once __DIR__ . '/../includes/mobile_header.php';
+
+require_once __DIR__ . '/../includes/layout.php';
+
+$breadcrumbs = ['Dashboard' => BASE_PATH.'/student/index.php', 'My Violations' => null];
+
+if (IS_MOBILE) {
+    require_once __DIR__ . '/../includes/mobile_header.php';
+} else {
+    require_once __DIR__ . '/../includes/header.php';
+}
+
 requireRole('student');
 
 $pdo = getDBConnection();
@@ -21,66 +30,106 @@ $violations = $pdo->prepare("
 ");
 $violations->execute([$studentId]);
 $violations = $violations->fetchAll();
+
+if (IS_MOBILE):
 ?>
 
-<?php if (empty($violations)): ?>
-<div class="mobile-empty">
-    <img src="<?= BASE_PATH ?>/assets/img/icons/icon-96.png" alt="SVMS Logo" style="width: 64px; height: 64px; margin-bottom: 12px; object-fit: contain;">
+<!-- Section Header -->
+<div class="m-section-header mb-3">
+    <span class="m-section-title">Violation History</span>
+    <span style="font-size:12px;color:#7e747c;font-weight:600;"><?= count($violations) ?> record<?= count($violations) !== 1 ? 's' : '' ?></span>
+</div>
 
-    <h5>No Violations</h5>
-    <p>You have a clean record!</p>
+<?php if (empty($violations)): ?>
+<div class="m-card">
+    <div class="m-empty">
+        <i class="bi bi-shield-check"></i>
+        <h5>Clean Record</h5>
+        <p>You have no violations on record!</p>
+    </div>
 </div>
 <?php else: ?>
-
-<div class="mb-3" style="font-size:13px;color:var(--text-muted);">
-    Total: <strong><?= count($violations) ?></strong> violation<?= count($violations) > 1 ? 's' : '' ?>
-</div>
-
-<?php foreach ($violations as $v): ?>
-<div class="violation-detail-mobile">
-    <div style="padding:14px 18px;border-bottom:1px solid var(--border-light);">
-        <div class="d-flex justify-content-between align-items-start">
+<div class="m-card">
+    <?php foreach ($violations as $v): ?>
+    <div style="padding:16px 18px;border-bottom:1px solid #f7f2f8;">
+        <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
-                <strong style="font-size:14px;"><?= sanitize($v['violation_name']) ?></strong>
-                <div class="mt-1"><?= severityBadge($v['severity']) ?> <?= statusBadge($v['status']) ?></div>
+                <div style="font-weight:700;font-size:14px;color:#130117;"><?= sanitize($v['violation_name']) ?></div>
+                <div style="font-size:11px;color:#7e747c;margin-top:2px;"><?= formatDateTime($v['date_occurred'], 'M d, Y') ?> · <?= sanitize($v['reporter']) ?></div>
             </div>
+            <?= severityBadge($v['severity']) ?>
         </div>
+        <?php if ($v['location']): ?>
+        <div style="font-size:11px;color:#7e747c;margin-bottom:6px;"><i class="bi bi-geo-alt me-1"></i><?= sanitize($v['location']) ?></div>
+        <?php endif; ?>
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <?= statusBadge($v['status']) ?>
+            <?php if ($v['actions_data']): ?>
+                <?php foreach (explode(';;', $v['actions_data']) as $ad):
+                    $parts = explode('|', $ad);
+                    if (count($parts) === 2) echo actionBadge($parts[0]);
+                endforeach; ?>
+            <?php endif; ?>
+        </div>
+        <?php if ($v['description']): ?>
+        <p style="font-size:12px;color:#4c444b;margin-top:8px;margin-bottom:0;line-height:1.5;"><?= sanitize(substr($v['description'],0,120)) ?></p>
+        <?php endif; ?>
     </div>
-    <div class="detail-row">
-        <span class="detail-label">Date</span>
-        <span class="detail-value"><?= formatDateTime($v['date_occurred'], 'M d, Y h:i A') ?></span>
-    </div>
-    <div class="detail-row">
-        <span class="detail-label">Reported By</span>
-        <span class="detail-value"><?= sanitize($v['reporter']) ?></span>
-    </div>
-    <?php if ($v['location']): ?>
-    <div class="detail-row">
-        <span class="detail-label">Location</span>
-        <span class="detail-value"><?= sanitize($v['location']) ?></span>
-    </div>
-    <?php endif; ?>
-    <?php if ($v['description']): ?>
-    <div style="padding:12px 18px;font-size:13px;color:var(--text-secondary);border-top:1px solid var(--border-light);">
-        <?= sanitize($v['description']) ?>
-    </div>
-    <?php endif; ?>
-    <?php if ($v['actions_data']): ?>
-    <div style="padding:12px 18px;border-top:1px solid var(--border-light);background:var(--bg-body);">
-        <small class="text-muted d-block mb-1" style="font-weight:600;">Disciplinary Action:</small>
-        <?php 
-        $actionsArr = explode(';;', $v['actions_data']);
-        foreach ($actionsArr as $ad) {
-            $parts = explode('|', $ad);
-            if (count($parts) === 2) {
-                echo actionBadge($parts[0]) . ' ' . statusBadge($parts[1]) . ' ';
-            }
-        }
-        ?>
-    </div>
-    <?php endif; ?>
+    <?php endforeach; ?>
 </div>
-<?php endforeach; ?>
 <?php endif; ?>
 
-<?php require_once __DIR__ . '/../includes/mobile_footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/mobile_footer.php';
+else: // DESKTOP ?>
+
+<div class="card-panel">
+    <div class="panel-header">
+        <h5 class="panel-title"><i class="bi bi-exclamation-triangle-fill"></i> My Violations</h5>
+        <span style="font-size:13px;color:var(--text-muted);"><?= count($violations) ?> record<?= count($violations) !== 1 ? 's' : '' ?></span>
+    </div>
+    <?php if (empty($violations)): ?>
+    <div class="panel-body text-center py-5">
+        <i class="bi bi-shield-check" style="font-size:52px;color:#ede9ee;"></i>
+        <p style="color:var(--text-muted);margin-top:14px;font-size:14px;">No violations on record. Keep it up!</p>
+    </div>
+    <?php else: ?>
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead><tr>
+                <th>Violation</th>
+                <th>Severity</th>
+                <th>Location</th>
+                <th>Reported By</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr></thead>
+            <tbody>
+            <?php foreach ($violations as $v): ?>
+            <tr>
+                <td><?= sanitize($v['violation_name']) ?></td>
+                <td><?= severityBadge($v['severity']) ?></td>
+                <td><?= sanitize($v['location'] ?? '—') ?></td>
+                <td><?= sanitize($v['reporter']) ?></td>
+                <td><?= formatDateTime($v['date_occurred'], 'M d, Y') ?></td>
+                <td><?= statusBadge($v['status']) ?></td>
+                <td>
+                    <?php if ($v['actions_data']): ?>
+                        <?php foreach (explode(';;', $v['actions_data']) as $ad):
+                            $parts = explode('|', $ad);
+                            if (count($parts) === 2) echo actionBadge($parts[0]);
+                        endforeach; ?>
+                    <?php else: ?>
+                        <span style="color:var(--text-muted);font-size:12px;">—</span>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+</div>
+
+<?php require_once __DIR__ . '/../includes/footer.php';
+endif; ?>

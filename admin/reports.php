@@ -95,22 +95,40 @@ $byType = $byType->fetchAll();
 <!-- Summary Cards -->
 <div class="row g-3 mb-4">
     <div class="col-md-4 col-xl-2">
-        <div class="stat-card stat-purple"><div class="stat-value"><?= $summary['total'] ?></div><div class="stat-label">Total</div></div>
+        <div class="stat-card stat-purple">
+            <div class="stat-header"><div class="stat-label">Total</div><div class="stat-icon"><i class="bi bi-bar-chart-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['total'] ?></div>
+        </div>
     </div>
     <div class="col-md-4 col-xl-2">
-        <div class="stat-card stat-gold"><div class="stat-value"><?= $summary['minor_count'] ?></div><div class="stat-label">Minor</div></div>
+        <div class="stat-card stat-gold">
+            <div class="stat-header"><div class="stat-label">Minor</div><div class="stat-icon"><i class="bi bi-info-circle-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['minor_count'] ?></div>
+        </div>
     </div>
     <div class="col-md-4 col-xl-2">
-        <div class="stat-card" style="border-left:3px solid #f97316"><div class="stat-value"><?= $summary['major_count'] ?></div><div class="stat-label">Major</div></div>
+        <div class="stat-card stat-orange">
+            <div class="stat-header"><div class="stat-label">Major</div><div class="stat-icon"><i class="bi bi-exclamation-circle-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['major_count'] ?></div>
+        </div>
     </div>
     <div class="col-md-4 col-xl-2">
-        <div class="stat-card stat-red"><div class="stat-value"><?= $summary['critical_count'] ?></div><div class="stat-label">Critical</div></div>
+        <div class="stat-card stat-red">
+            <div class="stat-header"><div class="stat-label">Critical</div><div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['critical_count'] ?></div>
+        </div>
     </div>
     <div class="col-md-4 col-xl-2">
-        <div class="stat-card stat-gold"><div class="stat-value"><?= $summary['pending_count'] ?></div><div class="stat-label">Pending</div></div>
+        <div class="stat-card stat-gold">
+            <div class="stat-header"><div class="stat-label">Pending</div><div class="stat-icon"><i class="bi bi-clock-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['pending_count'] ?></div>
+        </div>
     </div>
     <div class="col-md-4 col-xl-2">
-        <div class="stat-card stat-green"><div class="stat-value"><?= $summary['resolved_count'] ?></div><div class="stat-label">Resolved</div></div>
+        <div class="stat-card stat-green">
+            <div class="stat-header"><div class="stat-label">Resolved</div><div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['resolved_count'] ?></div>
+        </div>
     </div>
 </div>
 

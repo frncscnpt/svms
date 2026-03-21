@@ -18,10 +18,11 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
     <meta name="theme-color" content="#2e1731">
     <title><?= $pageTitle ?? 'Dashboard' ?> - SVMS</title>
     <link rel="manifest" href="<?= getManifestDataUri() ?>">
-    <link rel="icon" href="<?= BASE_PATH ?>/assets/img/icons/icon-72.png" type="image/png">
+    <link rel="icon" href="<?= BASE_PATH ?>/assets/img/logo.png" type="image/png">
+    <link rel="preload" href="<?= BASE_PATH ?>/assets/font/Chillax-Variable.ttf" as="font" type="font/ttf" crossorigin>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="<?= BASE_PATH ?>/assets/css/style.css" rel="stylesheet">
+    <link href="<?= BASE_PATH ?>/assets/css/style.css?v=<?= time() ?>" rel="stylesheet">
     <?php if (isset($extraCSS)) echo $extraCSS; ?>
     <script src="<?= BASE_PATH ?>/assets/js/push-manager.js" defer></script>
 </head>
@@ -30,13 +31,17 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <div class="brand-icon">
-                <img src="<?= BASE_PATH ?>/assets/img/icons/icon-72.png" alt="SVMS Logo">
+                <img src="<?= BASE_PATH ?>/assets/img/logo.png" alt="SVMS Logo">
             </div>
 
             <div class="brand-text">
                 <h2>SVMS</h2>
                 <p>Lyceum of Subic Bay</p>
             </div>
+
+            <button class="sidebar-close-btn d-lg-none" id="sidebarClose" aria-label="Close menu">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
 
         <nav class="sidebar-nav">
@@ -84,24 +89,52 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
                     <i class="bi bi-file-earmark-bar-graph-fill"></i> <span>Reports</span>
                 </a>
             </div>
+            <?php elseif ($currentUser['role'] === 'teacher'): ?>
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="<?= BASE_PATH ?>/teacher/index.php" class="nav-link-item <?= $currentPage === 'index' && $currentDir === 'teacher' ? 'active' : '' ?>">
+                    <i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span>
+                </a>
+                <a href="<?= BASE_PATH ?>/teacher/scan.php" class="nav-link-item <?= $currentPage === 'scan' ? 'active' : '' ?>">
+                    <i class="bi bi-qr-code-scan"></i> <span>Scan QR</span>
+                </a>
+                <a href="<?= BASE_PATH ?>/teacher/report.php" class="nav-link-item <?= $currentPage === 'report' ? 'active' : '' ?>">
+                    <i class="bi bi-plus-circle-fill"></i> <span>File Report</span>
+                </a>
+                <a href="<?= BASE_PATH ?>/teacher/my_reports.php" class="nav-link-item <?= $currentPage === 'my_reports' ? 'active' : '' ?>">
+                    <i class="bi bi-file-earmark-text-fill"></i> <span>My Reports</span>
+                </a>
+            </div>
+            <?php elseif ($currentUser['role'] === 'student'): ?>
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="<?= BASE_PATH ?>/student/index.php" class="nav-link-item <?= $currentPage === 'index' && $currentDir === 'student' ? 'active' : '' ?>">
+                    <i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span>
+                </a>
+                <a href="<?= BASE_PATH ?>/student/violations.php" class="nav-link-item <?= $currentPage === 'violations' ? 'active' : '' ?>">
+                    <i class="bi bi-exclamation-triangle-fill"></i> <span>My Violations</span>
+                </a>
+            </div>
             <?php endif; ?>
 
             <div class="nav-section">
                 <div class="nav-section-title">Account</div>
-                <a href="<?= BASE_PATH ?>/api/logout.php" class="nav-link-item">
-                    <i class="bi bi-box-arrow-left"></i> <span>Logout</span>
+                <a href="<?= BASE_PATH ?>/settings.php" class="nav-link-item <?= $currentPage === 'settings' ? 'active' : '' ?>">
+                    <i class="bi bi-person-circle"></i> <span>My Profile</span>
                 </a>
             </div>
         </nav>
 
         <div class="sidebar-user">
-            <?= getAvatarHtml($currentUser['avatar'], $currentUser['full_name'], 'user-avatar') ?>
-            <div class="user-info">
-                <div class="user-name"><?= sanitize($currentUser['full_name']) ?></div>
-                <div class="user-role"><?= ucwords(str_replace('_', ' ', $currentUser['role'])) ?></div>
-            </div>
+            <button onclick="confirmLogout(event)" class="sidebar-logout-btn">
+                <i class="bi bi-box-arrow-left"></i>
+                <span>Log Out</span>
+            </button>
         </div>
     </aside>
+
+    <!-- Sidebar backdrop (mobile) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -176,15 +209,10 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
                         </div>
                     </div>
                 </div>
-                <div class="dropdown">
-                    <button class="topbar-btn d-flex align-items-center justify-content-center p-0" data-bs-toggle="dropdown" style="border-radius: 50%; overflow: hidden; width: 36px; height: 36px;">
+                <div class="ms-1">
+                    <a href="<?= BASE_PATH ?>/settings.php" class="topbar-btn d-flex align-items-center justify-content-center p-0" style="border-radius: 50%; overflow: hidden; width: 36px; height: 36px; text-decoration:none;">
                         <?= getAvatarHtml($_SESSION['avatar'] ?? null, $_SESSION['full_name'], 'profile-avatar', 'width: 100%; height: 100%; font-size: 14px; margin: 0;') ?>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><span class="dropdown-item-text"><strong><?= sanitize($currentUser['full_name']) ?></strong><br><small class="text-muted"><?= ucwords(str_replace('_', ' ', $currentUser['role'])) ?></small></span></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="<?= BASE_PATH ?>/api/logout.php"><i class="bi bi-box-arrow-left"></i> Logout</a></li>
-                    </ul>
+                    </a>
                 </div>
             </div>
         </div>

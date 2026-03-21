@@ -3,69 +3,69 @@
  * SVMS - Teacher: QR Code Scanner
  */
 $pageTitle = 'Scan QR Code';
-$pageSubtitle = 'Point camera at student QR code';
-require_once __DIR__ . '/../includes/mobile_header.php';
+require_once __DIR__ . '/../includes/layout.php';
+$breadcrumbs = ['Dashboard' => BASE_PATH.'/teacher/index.php', 'Scan QR' => null];
+if (IS_MOBILE) {
+    require_once __DIR__ . '/../includes/mobile_header.php';
+} else {
+    require_once __DIR__ . '/../includes/header.php';
+}
 requireRole('teacher');
 ?>
 
+<div class="<?= IS_MOBILE ? '' : 'row justify-content-center' ?>">
+<div class="<?= IS_MOBILE ? '' : 'col-lg-6' ?>">
+
 <!-- Scanner Area -->
 <div id="scannerSection">
-    <div class="qr-scanner-container" id="qrReader" style="min-height:300px;"></div>
-    <div class="qr-scanner-hint">
-        <i class="bi bi-qr-code-scan"></i>
-        Position the QR code within the frame to scan
+    <div class="<?= IS_MOBILE ? 'm-card' : 'card-panel' ?> mb-3">
+        <?php if (!IS_MOBILE): ?>
+        <div class="panel-header"><h5 class="panel-title"><i class="bi bi-qr-code-scan"></i> QR Scanner</h5></div>
+        <?php endif; ?>
+        <div class="<?= IS_MOBILE ? 'm-card-body' : 'panel-body' ?>">
+            <div class="<?= IS_MOBILE ? 'm-qr-container' : 'qr-scanner-container' ?>" id="qrReader" style="min-height:280px;border-radius:12px;overflow:hidden;"></div>
+            <div class="<?= IS_MOBILE ? 'm-qr-hint' : 'qr-scanner-hint mt-3 text-center' ?>">
+                <i class="bi bi-qr-code-scan" style="font-size:22px;color:var(--primary);display:block;margin-bottom:6px;"></i>
+                Position the QR code within the frame to scan
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Result Section (hidden initially) -->
 <div id="resultSection" style="display:none;">
-    <div class="mobile-card">
-        <div style="background:linear-gradient(135deg,var(--primary),var(--primary-light));padding:24px;text-align:center;color:white;">
-            <div class="mobile-profile-avatar" id="resultAvatar" style="margin:0 auto 12px;"></div>
+    <div class="<?= IS_MOBILE ? 'm-card' : 'card-panel' ?> mb-3">
+        <div style="background:linear-gradient(135deg,#130117,#2e1731);padding:28px;text-align:center;color:white;border-radius:<?= IS_MOBILE ? '18px 18px 0 0' : '18px 18px 0 0' ?>;">
+            <div class="<?= IS_MOBILE ? 'm-profile-avatar' : 'user-avatar' ?>" id="resultAvatar" style="<?= IS_MOBILE ? '' : 'width:64px;height:64px;font-size:22px;' ?>margin:0 auto 12px;background:rgba(255,255,255,0.15);"></div>
             <h5 style="color:white;margin:0;" id="resultName"></h5>
-            <small style="color:rgba(255,255,255,0.7);" id="resultNumber"></small>
+            <small style="color:rgba(255,255,255,0.6);" id="resultNumber"></small>
         </div>
-        <div class="card-body">
-            <div class="d-flex justify-content-between py-2 border-bottom" style="font-size:13px;">
-                <span class="text-muted">Grade & Section</span>
-                <strong id="resultGrade"></strong>
-            </div>
-            <div class="d-flex justify-content-between py-2 border-bottom" style="font-size:13px;">
-                <span class="text-muted">Contact</span>
-                <strong id="resultContact"></strong>
-            </div>
-            <div class="d-flex justify-content-between py-2 border-bottom" style="font-size:13px;">
-                <span class="text-muted">Guardian</span>
-                <strong id="resultGuardian"></strong>
-            </div>
-            <div class="d-flex justify-content-between py-2" style="font-size:13px;">
-                <span class="text-muted">Total Violations</span>
-                <strong><span class="badge badge-soft-danger" id="resultViolations"></span></strong>
-            </div>
+        <div class="<?= IS_MOBILE ? '' : 'panel-body' ?>" style="padding:0;">
+            <div class="<?= IS_MOBILE ? 'm-detail-row' : 'd-flex justify-content-between py-3 px-4 border-bottom' ?>" style="font-size:13px;"><span class="<?= IS_MOBILE ? 'm-detail-label' : 'text-muted' ?>">Grade & Section</span><strong id="resultGrade"></strong></div>
+            <div class="<?= IS_MOBILE ? 'm-detail-row' : 'd-flex justify-content-between py-3 px-4 border-bottom' ?>" style="font-size:13px;"><span class="<?= IS_MOBILE ? 'm-detail-label' : 'text-muted' ?>">Contact</span><strong id="resultContact"></strong></div>
+            <div class="<?= IS_MOBILE ? 'm-detail-row' : 'd-flex justify-content-between py-3 px-4 border-bottom' ?>" style="font-size:13px;"><span class="<?= IS_MOBILE ? 'm-detail-label' : 'text-muted' ?>">Guardian</span><strong id="resultGuardian"></strong></div>
+            <div class="<?= IS_MOBILE ? 'm-detail-row' : 'd-flex justify-content-between py-3 px-4' ?>" style="font-size:13px;"><span class="<?= IS_MOBILE ? 'm-detail-label' : 'text-muted' ?>">Total Violations</span><strong><span class="badge badge-soft-danger" id="resultViolations"></span></strong></div>
         </div>
     </div>
-
-    <div class="d-grid gap-2 mt-3">
-        <a href="#" id="reportBtn" class="mobile-form submit-btn text-center text-decoration-none" style="display:block;">
-            <i class="bi bi-exclamation-triangle me-1"></i> File Violation Report
-        </a>
-        <button class="btn btn-outline-secondary" onclick="resetScanner()" style="border-radius:var(--radius-lg);padding:12px;">
-            <i class="bi bi-arrow-repeat me-1"></i> Scan Another
-        </button>
+    <div class="d-flex gap-2">
+        <a href="#" id="reportBtn" class="<?= IS_MOBILE ? 'm-submit-btn' : 'btn-primary-custom' ?> flex-fill justify-content-center" style="padding:12px;"><i class="bi bi-exclamation-triangle me-1"></i> File Violation Report</a>
+        <button class="<?= IS_MOBILE ? '' : 'btn-outline-custom' ?>" onclick="resetScanner()" style="padding:12px 20px;<?= IS_MOBILE ? 'background:#f7f2f8;border:1.5px solid #ede9ee;border-radius:14px;font-size:18px;' : '' ?>"><i class="bi bi-arrow-repeat"></i></button>
     </div>
 </div>
 
 <!-- Error Section -->
 <div id="errorSection" style="display:none;">
-    <div class="mobile-empty">
-        <i class="bi bi-exclamation-circle" style="color:var(--danger);"></i>
-        <h5>Student Not Found</h5>
-        <p id="errorMsg">No student linked to this QR code.</p>
-        <button class="mobile-form submit-btn" onclick="resetScanner()" style="width:auto;display:inline-block;padding:10px 24px;margin-top:12px;">
-            <i class="bi bi-arrow-repeat me-1"></i> Try Again
-        </button>
+    <div class="<?= IS_MOBILE ? 'm-card' : 'card-panel' ?>">
+        <div class="<?= IS_MOBILE ? 'm-empty' : 'panel-body text-center py-5' ?>">
+            <i class="bi bi-exclamation-circle" style="font-size:48px;color:var(--danger);<?= IS_MOBILE ? 'display:block;margin-bottom:14px;' : '' ?>"></i>
+            <h5 style="<?= IS_MOBILE ? 'font-size:16px;font-weight:700;color:#4c444b;margin-bottom:6px;' : 'margin-top:12px;color:var(--text-primary);' ?>">Student Not Found</h5>
+            <p id="errorMsg" style="<?= IS_MOBILE ? 'font-size:13px;color:#7e747c;' : 'color:var(--text-muted);font-size:13px;' ?>">No student linked to this QR code.</p>
+            <button class="<?= IS_MOBILE ? 'm-submit-btn mt-2' : 'btn-primary-custom mt-2' ?>" onclick="resetScanner()"><i class="bi bi-arrow-repeat me-1"></i> Try Again</button>
+        </div>
     </div>
 </div>
+
+</div></div>
 
 <?php
 $extraJS = '<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -132,5 +132,9 @@ function resetScanner() {
 
 startScanner();
 </script>';
-require_once __DIR__ . '/../includes/mobile_footer.php';
+if (IS_MOBILE) {
+    require_once __DIR__ . '/../includes/mobile_footer.php';
+} else {
+    require_once __DIR__ . '/../includes/footer.php';
+}
 ?>

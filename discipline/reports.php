@@ -52,10 +52,30 @@ $summary = $summaryStmt->fetch();
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-3"><div class="stat-card stat-purple"><div class="stat-value"><?= $summary['total'] ?></div><div class="stat-label">Total</div></div></div>
-    <div class="col-md-3"><div class="stat-card stat-gold"><div class="stat-value"><?= $summary['minor_count'] ?></div><div class="stat-label">Minor</div></div></div>
-    <div class="col-md-3"><div class="stat-card" style="border-left:3px solid #f97316"><div class="stat-value"><?= $summary['major_count'] ?></div><div class="stat-label">Major</div></div></div>
-    <div class="col-md-3"><div class="stat-card stat-red"><div class="stat-value"><?= $summary['critical_count'] ?></div><div class="stat-label">Critical</div></div></div>
+    <div class="col-md-3">
+        <div class="stat-card stat-purple">
+            <div class="stat-header"><div class="stat-label">Total</div><div class="stat-icon"><i class="bi bi-bar-chart-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['total'] ?></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card stat-gold">
+            <div class="stat-header"><div class="stat-label">Minor</div><div class="stat-icon"><i class="bi bi-info-circle-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['minor_count'] ?></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card stat-orange">
+            <div class="stat-header"><div class="stat-label">Major</div><div class="stat-icon"><i class="bi bi-exclamation-circle-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['major_count'] ?></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card stat-red">
+            <div class="stat-header"><div class="stat-label">Critical</div><div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div></div>
+            <div class="stat-value"><?= $summary['critical_count'] ?></div>
+        </div>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

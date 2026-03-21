@@ -72,10 +72,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Now include mobile header (HTML output starts here)
+// Now include header (HTML output starts here)
 $pageTitle = 'File Report';
-$pageSubtitle = 'Submit a new violation report';
-require_once __DIR__ . '/../includes/mobile_header.php';
+$breadcrumbs = ['Dashboard' => BASE_PATH.'/teacher/index.php', 'File Report' => null];
+require_once __DIR__ . '/../includes/layout.php';
+if (IS_MOBILE) {
+    require_once __DIR__ . '/../includes/mobile_header.php';
+} else {
+    require_once __DIR__ . '/../includes/header.php';
+}
 
 $studentId = $_GET['student_id'] ?? '';
 $student = null;
@@ -89,12 +94,14 @@ $students = $pdo->query("SELECT id, student_number, first_name, last_name, grade
 $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='active' ORDER BY severity DESC, name")->fetchAll();
 ?>
 
-<form method="POST" enctype="multipart/form-data" class="mobile-form">
+<div class="<?= IS_MOBILE ? '' : 'row justify-content-center' ?>">
+<div class="<?= IS_MOBILE ? '' : 'col-lg-7' ?>">
+<form method="POST" enctype="multipart/form-data" class="<?= IS_MOBILE ? 'm-form' : '' ?>">
 
     <!-- Student Selection -->
-    <div class="mobile-card mb-3">
-        <div class="card-header"><h6><i class="bi bi-person-fill me-2"></i>Student</h6></div>
-        <div class="card-body">
+    <div class="card-panel mb-3">
+        <div class="panel-header"><h5 class="panel-title"><i class="bi bi-person-fill"></i> Student</h5></div>
+        <div class="panel-body">
             <?php if ($student): ?>
                 <input type="hidden" name="student_id" value="<?= $student['id'] ?>">
                 <div class="d-flex align-items-center gap-3">
@@ -122,9 +129,9 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
     </div>
 
     <!-- Violation Details -->
-    <div class="mobile-card mb-3">
-        <div class="card-header"><h6><i class="bi bi-exclamation-triangle-fill me-2"></i>Violation Details</h6></div>
-        <div class="card-body">
+    <div class="card-panel mb-3">
+        <div class="panel-header"><h5 class="panel-title"><i class="bi bi-exclamation-triangle-fill"></i> Violation Details</h5></div>
+        <div class="panel-body">
             <div class="form-group">
                 <label class="form-label">Violation Type *</label>
                 <select class="form-select" name="violation_type_id" required>
@@ -154,9 +161,16 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
         </div>
     </div>
 
-    <button type="submit" class="submit-btn" style="margin-bottom: 20px;">
+    <button type="submit" class="<?= IS_MOBILE ? 'm-submit-btn' : 'btn-primary-custom w-100' ?>" style="padding:13px;font-size:15px;justify-content:center;margin-bottom:20px;">
         <i class="bi bi-send-fill me-1"></i> Submit Report
     </button>
 </form>
+</div><?= IS_MOBILE ? '' : '</div>' ?>
 
-<?php require_once __DIR__ . '/../includes/mobile_footer.php'; ?>
+<?php
+if (IS_MOBILE) {
+    require_once __DIR__ . '/../includes/mobile_footer.php';
+} else {
+    require_once __DIR__ . '/../includes/footer.php';
+}
+?>
