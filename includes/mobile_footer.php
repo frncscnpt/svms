@@ -33,13 +33,6 @@
             <i class="bi bi-card-checklist"></i>
             <span>Pass</span>
         </a>
-        <a href="<?= BASE_PATH ?>/notifications.php" class="m-nav-item <?= $currentPage === 'notifications' ? 'active' : '' ?> position-relative">
-            <i class="bi bi-bell-fill"></i>
-            <span>Alerts</span>
-            <?php if ($unreadCount > 0): ?>
-            <span class="m-nav-badge-dot"></span>
-            <?php endif; ?>
-        </a>
         <a href="<?= BASE_PATH ?>/student/profile.php" class="m-nav-item <?= $currentPage === 'profile' ? 'active' : '' ?>">
             <i class="bi bi-person-fill"></i>
             <span>Profile</span>

@@ -1414,6 +1414,17 @@ a:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
+/* Topbar profile avatar — small version */
+.topbar .profile-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 14px !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    flex-shrink: 0;
+}
+
 /* QR Code styling */
 .qr-card {
     text-align: center;

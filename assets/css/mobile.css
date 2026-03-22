@@ -412,13 +412,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 18px;
-    border-bottom: 1px solid #f7f2f8;
+    padding: 16px 20px;
+    border-bottom: 1px solid #ede9ee;
     font-size: 13px;
 }
 
 .m-detail-row:last-child { border-bottom: none; }
-.m-detail-label { color: #7e747c; font-weight: 500; }
+.m-detail-label { color: #9e96a0; font-weight: 500; font-size: 13px; }
 .m-detail-value { color: #130117; font-weight: 600; text-align: right; max-width: 60%; }
 
 /* ── QR Scanner ── */

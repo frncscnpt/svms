@@ -76,12 +76,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Now include header (HTML output starts here)
 $pageTitle = 'File Report';
 $breadcrumbs = ['Dashboard' => BASE_PATH.'/teacher/index.php', 'File Report' => null];
-require_once __DIR__ . '/../includes/layout.php';
-if (IS_MOBILE) {
-    require_once __DIR__ . '/../includes/mobile_header.php';
-} else {
-    require_once __DIR__ . '/../includes/header.php';
-}
 
 $studentId = $_GET['student_id'] ?? '';
 $student = null;
@@ -95,6 +89,13 @@ if (!$student) {
     setFlash('warning', 'Please search for or scan a student first.');
     header('Location: ' . BASE_PATH . '/teacher/scan.php');
     exit;
+}
+
+require_once __DIR__ . '/../includes/layout.php';
+if (IS_MOBILE) {
+    require_once __DIR__ . '/../includes/mobile_header.php';
+} else {
+    require_once __DIR__ . '/../includes/header.php';
 }
 
 $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='active' ORDER BY severity DESC, name")->fetchAll();

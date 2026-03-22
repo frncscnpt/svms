@@ -9,6 +9,22 @@ requireLogin();
 
 $pdo = getDBConnection();
 
+// Fetch teacher stats if applicable
+$teacherStats = null;
+if ($currentUser['role'] === 'teacher') {
+    $teacherStats = [
+        'total'    => $pdo->prepare("SELECT COUNT(*) FROM violations WHERE reported_by=?")->execute([$_SESSION['user_id']]) ? $pdo->query("SELECT COUNT(*) FROM violations WHERE reported_by={$_SESSION['user_id']}")->fetchColumn() : 0,
+        'pending'  => 0,
+        'resolved' => 0,
+    ];
+    $s = $pdo->prepare("SELECT COUNT(*) FROM violations WHERE reported_by=? AND status='pending'");
+    $s->execute([$_SESSION['user_id']]); $teacherStats['pending'] = $s->fetchColumn();
+    $s = $pdo->prepare("SELECT COUNT(*) FROM violations WHERE reported_by=? AND status='resolved'");
+    $s->execute([$_SESSION['user_id']]); $teacherStats['resolved'] = $s->fetchColumn();
+    $s = $pdo->prepare("SELECT COUNT(*) FROM violations WHERE reported_by=?");
+    $s->execute([$_SESSION['user_id']]); $teacherStats['total'] = $s->fetchColumn();
+}
+
 // Handle avatar upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
@@ -55,6 +71,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 <div style="font-weight:700;font-size:18px;color:var(--primary);margin-top:4px;"><?= sanitize($currentUser['full_name']) ?></div>
                 <div style="font-size:13px;color:var(--text-muted);"><?= ucwords(str_replace('_', ' ', $currentUser['role'])) ?></div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:4px;"><?= sanitize($currentUser['email'] ?? '') ?></div>
+                <?php if ($teacherStats): ?>
+                <div class="row g-2 mt-3 pt-3" style="border-top:1px solid #f0eff4;">
+                    <div class="col-4 text-center">
+                        <div style="font-size:22px;font-weight:700;color:var(--primary);"><?= $teacherStats['total'] ?></div>
+                        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Total</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <div style="font-size:22px;font-weight:700;color:var(--warning);"><?= $teacherStats['pending'] ?></div>
+                        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Pending</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <div style="font-size:22px;font-weight:700;color:var(--success);"><?= $teacherStats['resolved'] ?></div>
+                        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Resolved</div>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

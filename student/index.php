@@ -56,6 +56,12 @@ $activeActions = $pdo->prepare("
 $activeActions->execute([$studentId]);
 $activeActions = $activeActions->fetchAll();
 
+$activePass = null;
+$pdo->exec("UPDATE uniform_passes SET status = 'expired' WHERE status = 'active' AND valid_date < CURDATE()");
+$passStmt = $pdo->prepare("SELECT up.*, u.full_name AS issued_by_name FROM uniform_passes up JOIN users u ON up.issued_by = u.id WHERE up.student_id = ? AND up.status = 'active' AND up.valid_date = CURDATE() ORDER BY up.created_at DESC LIMIT 1");
+$passStmt->execute([$studentId]);
+$activePass = $passStmt->fetch();
+
 if (IS_MOBILE):
 ?>
 
@@ -243,16 +249,64 @@ else: // DESKTOP ?>
         </div>
     </div>
 
-    <!-- Profile Widget -->
+    <!-- Uniform Pass Widget -->
     <div class="col-lg-4">
-        <div class="card-panel">
-            <div class="panel-body text-center" style="padding:28px 24px;">
-                <?= getAvatarHtml($student['photo'], $student['first_name'].' '.$student['last_name'], 'user-avatar', 'width:72px;height:72px;font-size:24px;margin:0 auto 12px;') ?>
-                <div style="font-weight:700;font-size:17px;color:var(--primary);"><?= sanitize($student['first_name'].' '.$student['last_name']) ?></div>
-                <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;"><?= sanitize($student['student_number']) ?></div>
-                <a href="<?= BASE_PATH ?>/student/profile.php" class="btn-outline-custom w-100" style="justify-content:center;"><i class="bi bi-person-fill me-1"></i> View Profile</a>
+        <?php if ($activePass): ?>
+        <div class="card-panel" style="overflow:hidden;">
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg,#065f46,#059669);padding:18px 20px;color:white;display:flex;align-items:center;gap:12px;">
+                <div style="width:38px;height:38px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="bi bi-check-circle-fill" style="font-size:18px;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:14px;">Uniform Pass Active</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.7);">Valid today</div>
+                </div>
+                <span class="ms-auto" style="background:rgba(255,255,255,0.2);color:white;font-size:10px;font-weight:700;padding:4px 10px;border-radius:99px;">ACTIVE</span>
+            </div>
+            <!-- QR + Details -->
+            <div style="display:flex;">
+                <!-- QR -->
+                <div style="flex:0 0 auto;padding:16px;border-right:1px solid #ede9ee;background:#f8fdf8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+                    <div id="dashPassQR" style="display:inline-block;padding:8px;background:white;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);"></div>
+                    <p style="font-size:10px;color:var(--text-muted);margin:0;text-align:center;line-height:1.4;">Show to teacher</p>
+                </div>
+                <!-- Details -->
+                <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom" style="font-size:12px;">
+                        <span class="text-muted">Reason</span>
+                        <strong style="max-width:120px;text-align:right;font-size:11px;"><?= sanitize($activePass['reason']) ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom" style="font-size:12px;">
+                        <span class="text-muted">Issued By</span>
+                        <strong style="font-size:11px;"><?= sanitize($activePass['issued_by_name']) ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom" style="font-size:12px;">
+                        <span class="text-muted">Issued</span>
+                        <strong style="font-size:11px;"><?= timeAgo($activePass['created_at']) ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom" style="font-size:12px;">
+                        <span class="text-muted">Valid Until</span>
+                        <strong style="font-size:11px;"><?= formatDate($activePass['valid_date']) ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 px-3" style="font-size:12px;">
+                        <span class="text-muted">Pass Code</span>
+                        <code style="font-size:9px;color:var(--primary);"><?= sanitize($activePass['pass_code']) ?></code>
+                    </div>
+                </div>
             </div>
         </div>
+        <?php else: ?>
+        <div class="card-panel">
+            <div class="panel-body text-center" style="padding:32px 24px;">
+                <div style="width:56px;height:56px;background:#f7f2f8;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+                    <i class="bi bi-card-checklist" style="font-size:26px;color:#ede9ee;"></i>
+                </div>
+                <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:6px;">No Active Pass</div>
+                <div style="font-size:12px;color:var(--text-muted);">You don't have a uniform pass for today.</div>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <?php if (!empty($activeActions)): $aa = $activeActions[0]; ?>
         <div class="card-panel mt-3" style="background:#f7f2f8;">
@@ -267,5 +321,19 @@ else: // DESKTOP ?>
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php';
+<?php
+if ($activePass) {
+    echo '<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+    new QRCode(document.getElementById("dashPassQR"), {
+        text: ' . json_encode($activePass['pass_code']) . ',
+        width: 120,
+        height: 120,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+    </script>';
+}
+require_once __DIR__ . '/../includes/footer.php';
 endif; ?>

@@ -6,13 +6,15 @@ $pageTitle = 'Uniform Pass';
 
 require_once __DIR__ . '/../includes/layout.php';
 
+// Desktop users see the pass on the dashboard — redirect them there
+if (!IS_MOBILE) {
+    header('Location: ' . BASE_PATH . '/student/index.php');
+    exit;
+}
+
 $breadcrumbs = ['Dashboard' => BASE_PATH.'/student/index.php', 'Uniform Pass' => null];
 
-if (IS_MOBILE) {
-    require_once __DIR__ . '/../includes/mobile_header.php';
-} else {
-    require_once __DIR__ . '/../includes/header.php';
-}
+require_once __DIR__ . '/../includes/mobile_header.php';
 
 requireRole('student');
 
@@ -52,7 +54,6 @@ $phToday = date('Y-m-d');
 $history->execute([$studentId, $phToday]);
 $passHistory = $history->fetchAll();
 
-if (IS_MOBILE):
 ?>
 
 <?php if ($activePass): ?>
@@ -79,8 +80,8 @@ if (IS_MOBILE):
         
         <!-- Pass Details -->
         <div style="padding:0;">
-            <div class="m-detail-row"><span class="m-detail-label">Pass Code</span><strong style="font-size:11px; font-family:monospace;"><?= sanitize($activePass['pass_code']) ?></strong></div>
-            <div class="m-detail-row"><span class="m-detail-label">Reason</span><strong><?= sanitize($activePass['reason']) ?></strong></div>
+            <div class="m-detail-row"><span class="m-detail-label">Pass Code</span><strong style="font-size:11px;font-family:monospace;text-align:right;"><?= sanitize($activePass['pass_code']) ?></strong></div>
+            <div class="m-detail-row"><span class="m-detail-label">Reason</span><strong style="text-align:right;max-width:55%;"><?= sanitize($activePass['reason']) ?></strong></div>
             <div class="m-detail-row"><span class="m-detail-label">Valid Date</span><strong><?= formatDate($activePass['valid_date']) ?></strong></div>
             <div class="m-detail-row"><span class="m-detail-label">Issued By</span><strong><?= sanitize($activePass['issued_by_name']) ?></strong></div>
             <div class="m-detail-row"><span class="m-detail-label">Issued At</span><strong><?= formatDateTime($activePass['created_at']) ?></strong></div>
@@ -145,110 +146,4 @@ if ($activePass) {
     </script>';
 }
 require_once __DIR__ . '/../includes/mobile_footer.php';
-else: // DESKTOP
 ?>
-
-<div class="row justify-content-center">
-    <div class="col-lg-9">
-        <?php if ($activePass): ?>
-        <div class="card-panel mb-4" style="overflow:hidden;">
-            <!-- Green header banner -->
-            <div style="background:linear-gradient(135deg, #065f46, #059669); padding:24px 28px; color:white; display:flex; align-items:center; gap:16px;">
-                <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="bi bi-check-circle-fill" style="font-size:24px;"></i>
-                </div>
-                <div>
-                    <h5 style="color:white;margin:0;font-size:16px;font-weight:700;">Temporary Uniform Pass</h5>
-                    <small style="color:rgba(255,255,255,0.7);">Lyceum of Subic Bay &mdash; Valid Today</small>
-                </div>
-                <span class="ms-auto" style="background:rgba(255,255,255,0.2);color:white;font-size:11px;font-weight:700;padding:5px 14px;border-radius:99px;letter-spacing:0.5px;">ACTIVE</span>
-            </div>
-
-            <!-- Body: QR left, details right -->
-            <div style="display:flex;flex-wrap:wrap;">
-                <!-- QR Code panel -->
-                <div style="flex:0 0 240px;padding:28px 20px;text-align:center;border-right:1px solid #ede9ee;background:#f8fdf8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">
-                    <div id="passQRCode" style="display:inline-block;padding:10px;background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.07);"></div>
-                    <p style="font-size:11px;color:var(--text-muted);margin:0;line-height:1.5;">Show this QR code to your<br>teacher for verification</p>
-                </div>
-
-                <!-- Details panel -->
-                <div style="flex:1;min-width:200px;">
-                    <div class="d-flex justify-content-between align-items-center py-3 px-4 border-bottom" style="font-size:13px;">
-                        <span class="text-muted">Pass Code</span>
-                        <code style="font-size:11px;color:var(--primary);"><?= sanitize($activePass['pass_code']) ?></code>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-3 px-4 border-bottom" style="font-size:13px;">
-                        <span class="text-muted">Reason</span>
-                        <strong style="max-width:200px;text-align:right;"><?= sanitize($activePass['reason']) ?></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-3 px-4 border-bottom" style="font-size:13px;">
-                        <span class="text-muted">Valid Date</span>
-                        <strong><?= formatDate($activePass['valid_date']) ?></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-3 px-4 border-bottom" style="font-size:13px;">
-                        <span class="text-muted">Issued By</span>
-                        <strong><?= sanitize($activePass['issued_by_name']) ?></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-3 px-4" style="font-size:13px;">
-                        <span class="text-muted">Issued At</span>
-                        <strong><?= formatDateTime($activePass['created_at']) ?></strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php else: ?>
-        <div class="card-panel mb-4">
-            <div class="panel-body text-center py-5">
-                <i class="bi bi-card-checklist" style="font-size:48px; color:#ede9ee;"></i>
-                <h5 style="margin-top:12px;">No Active Pass</h5>
-                <p style="color:var(--text-muted); font-size:13px;">You don't have an active uniform pass for today.<br>If you need one, please visit the discipline officer's office.</p>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <?php if (!empty($passHistory)): ?>
-        <div class="card-panel">
-            <div class="panel-header"><h5 class="panel-title"><i class="bi bi-clock-history"></i> Pass History</h5></div>
-            <div class="data-table-wrapper">
-                <table class="data-table">
-                    <thead><tr><th>Reason</th><th>Valid Date</th><th>Status</th><th>Issued By</th><th>Created</th></tr></thead>
-                    <tbody>
-                        <?php foreach ($passHistory as $ph): ?>
-                        <?php
-                            $phStatus = $ph['status'];
-                            if ($phStatus === 'active' && $ph['valid_date'] < date('Y-m-d')) $phStatus = 'expired';
-                            $statusClasses = ['active' => 'badge-soft-success', 'expired' => 'badge-soft-secondary', 'revoked' => 'badge-soft-danger'];
-                        ?>
-                        <tr>
-                            <td><?= sanitize($ph['reason']) ?></td>
-                            <td><?= formatDate($ph['valid_date']) ?></td>
-                            <td><span class="badge <?= $statusClasses[$phStatus] ?? 'badge-soft-secondary' ?>"><?= ucfirst($phStatus) ?></span></td>
-                            <td><small><?= sanitize($ph['issued_by_name']) ?></small></td>
-                            <td><small class="text-muted"><?= timeAgo($ph['created_at']) ?></small></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<?php
-if ($activePass) {
-    $extraJS = '<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script>
-    new QRCode(document.getElementById("passQRCode"), {
-        text: ' . json_encode($activePass['pass_code']) . ',
-        width: 180,
-        height: 180,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-    });
-    </script>';
-}
-require_once __DIR__ . '/../includes/footer.php';
-endif; ?>

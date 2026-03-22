@@ -97,37 +97,6 @@ if (IS_MOBILE):
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="m-section">
-    <div class="m-section-header">
-        <span class="m-section-title">Quick Actions</span>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-        <!-- Scan QR — dark gradient -->
-        <a href="<?= BASE_PATH ?>/teacher/scan.php" class="m-quick-action-primary">
-            <div class="m-quick-action-icon" style="background:rgba(255,255,255,0.12);">
-                <i class="bi bi-qr-code-scan" style="color:#fff;font-size:20px;"></i>
-            </div>
-            <div class="m-quick-action-text">
-                <div class="m-quick-action-title" style="color:#fff;">Scan Student QR</div>
-                <div class="m-quick-action-sub" style="color:rgba(255,255,255,0.55);">Instant ID verification</div>
-            </div>
-            <i class="bi bi-chevron-right" style="color:rgba(255,255,255,0.35);font-size:16px;"></i>
-        </a>
-        <!-- File Report — white card -->
-        <a href="<?= BASE_PATH ?>/teacher/scan.php?action=search" class="m-quick-action-secondary">
-            <div class="m-quick-action-icon" style="background:#ebe7ec;">
-                <i class="bi bi-exclamation-triangle-fill" style="color:#2e1731;font-size:20px;"></i>
-            </div>
-            <div class="m-quick-action-text">
-                <div class="m-quick-action-title">File Violation Report</div>
-                <div class="m-quick-action-sub">Manual incident documentation</div>
-            </div>
-            <i class="bi bi-chevron-right" style="color:#ccc;font-size:16px;"></i>
-        </a>
-    </div>
-</div>
-
 <!-- Recent Reports -->
 <div class="m-section">
     <div class="m-section-header">
@@ -213,7 +182,7 @@ else: // DESKTOP ?>
 <div class="row g-4">
     <!-- Recent Reports -->
     <div class="col-lg-8">
-        <div class="card-panel">
+        <div class="card-panel h-100" style="overflow:hidden;">
             <div class="panel-header">
                 <h5 class="panel-title"><i class="bi bi-clock-history"></i> Recent Reports</h5>
                 <a href="<?= BASE_PATH ?>/teacher/my_reports.php" class="btn-outline-custom" style="font-size:12px;padding:5px 14px;">View All</a>
@@ -258,46 +227,144 @@ else: // DESKTOP ?>
         </div>
     </div>
 
-    <!-- Quick Actions -->
+    <!-- Quick Student Scan -->
     <div class="col-lg-4">
-        <div class="card-panel mb-4" style="background:linear-gradient(135deg,#130117,#2e1731);border:none;">
-            <div class="panel-body" style="padding:28px 24px;">
-                <h5 style="color:#fff;font-weight:700;margin-bottom:6px;">QR Quick Scan</h5>
-                <p style="color:rgba(255,255,255,0.55);font-size:13px;margin-bottom:20px;">Instantly identify a student by scanning their ID QR code.</p>
-                <a href="<?= BASE_PATH ?>/teacher/scan.php" class="btn-primary-custom" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);width:100%;justify-content:center;padding:12px;">
-                    <i class="bi bi-qr-code-scan"></i> Launch Scanner
-                </a>
+        <div class="card-panel h-100">
+            <div class="panel-header">
+                <h5 class="panel-title"><i class="bi bi-qr-code-scan"></i> Quick Student Scan</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="camToggleLabel" style="font-size:11px;color:var(--text-muted);font-weight:600;">OFF</span>
+                    <div class="cam-toggle-wrap" onclick="toggleCamera()" title="Toggle camera">
+                        <input type="checkbox" id="camToggle" style="display:none;">
+                        <div class="cam-toggle-track cam-off" id="camToggleTrack">
+                            <div class="cam-toggle-thumb"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <div class="card-panel">
-            <div class="panel-header"><h5 class="panel-title"><i class="bi bi-lightning-fill"></i> Quick Actions</h5></div>
-            <div class="panel-body" style="padding:12px;">
-                <a href="<?= BASE_PATH ?>/teacher/scan.php?action=search" class="d-flex align-items-center gap-3 p-3 text-decoration-none" style="border-radius:12px;transition:background 0.2s;" onmouseover="this.style.background='#f7f2f8'" onmouseout="this.style.background='transparent'">
-                    <div style="width:40px;height:40px;background:rgba(46,23,49,0.07);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px;"><i class="bi bi-plus-circle-fill"></i></div>
-                    <div>
-                        <div style="font-weight:600;font-size:14px;color:var(--text-primary);">File a Report</div>
-                        <div style="font-size:12px;color:var(--text-muted);">Submit a new violation</div>
+            <div class="panel-body text-center" style="padding:16px;">
+                <div id="scannerSection">
+                    <div id="qrReader" style="width:100%;border-radius:8px;overflow:hidden;margin-bottom:10px;display:none;"></div>
+                    <div id="camOffPlaceholder" style="display:flex;width:100%;border-radius:8px;background:#f7f2f8;border:1.5px dashed #ede9ee;min-height:200px;align-items:center;justify-content:center;flex-direction:column;gap:8px;margin-bottom:10px;">
+                        <i class="bi bi-camera-video-off" style="font-size:32px;color:var(--text-muted);"></i>
+                        <span style="font-size:12px;color:var(--text-muted);">Camera is off</span>
                     </div>
-                </a>
-                <a href="<?= BASE_PATH ?>/teacher/my_reports.php" class="d-flex align-items-center gap-3 p-3 text-decoration-none" style="border-radius:12px;transition:background 0.2s;" onmouseover="this.style.background='#f7f2f8'" onmouseout="this.style.background='transparent'">
-                    <div style="width:40px;height:40px;background:rgba(46,23,49,0.07);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px;"><i class="bi bi-file-earmark-text"></i></div>
-                    <div>
-                        <div style="font-weight:600;font-size:14px;color:var(--text-primary);">My Reports</div>
-                        <div style="font-size:12px;color:var(--text-muted);">View submitted reports</div>
+                    <p class="text-muted" style="font-size:12px;margin-bottom:0;">Scan student QR code to view profile or file a report</p>
+                </div>
+                <!-- Result -->
+                <div id="resultSection" style="display:none;text-align:left;">
+                    <div class="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom">
+                        <div id="resultAvatarContainer"></div>
+                        <div>
+                            <h6 id="resultName" class="mb-0" style="color:var(--primary);"></h6>
+                            <small class="text-muted" id="resultNumber"></small>
+                        </div>
                     </div>
-                </a>
-                <a href="<?= BASE_PATH ?>/settings.php" class="d-flex align-items-center gap-3 p-3 text-decoration-none" style="border-radius:12px;transition:background 0.2s;" onmouseover="this.style.background='#f7f2f8'" onmouseout="this.style.background='transparent'">
-                    <div style="width:40px;height:40px;background:rgba(46,23,49,0.07);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px;"><i class="bi bi-person-circle"></i></div>
-                    <div>
-                        <div style="font-weight:600;font-size:14px;color:var(--text-primary);">My Profile</div>
-                        <div style="font-size:12px;color:var(--text-muted);">Account settings</div>
+                    <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
+                        <span class="text-muted">Grade:</span>
+                        <strong id="resultGrade"></strong>
                     </div>
-                </a>
+                    <div class="d-flex justify-content-between mb-3" style="font-size:13px;">
+                        <span class="text-muted">Total Violations:</span>
+                        <strong><span class="badge badge-soft-danger" id="resultViolations"></span></strong>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="#" id="reportBtn" class="btn-primary-custom" style="justify-content:center;"><i class="bi bi-file-earmark-plus me-1"></i>File Report</a>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="resetScanner()"><i class="bi bi-arrow-repeat me-1"></i>Scan Another</button>
+                    </div>
+                </div>
+                <!-- Error -->
+                <div id="errorSection" style="display:none;padding:20px 0;">
+                    <i class="bi bi-exclamation-circle text-danger" style="font-size:32px;"></i>
+                    <h6 class="mt-2 text-danger">Student Not Found</h6>
+                    <p id="errorMsg" class="text-muted" style="font-size:12px;">The QR code is invalid or not registered.</p>
+                    <button class="btn btn-sm btn-outline-secondary mt-2" onclick="resetScanner()">Try Again</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php';
+<?php
+$extraJS = '<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+let html5QrCode;
+let cameraOn = false;
+
+function startScanner() {
+    document.getElementById("scannerSection").style.display = "block";
+    document.getElementById("resultSection").style.display = "none";
+    document.getElementById("errorSection").style.display = "none";
+    html5QrCode = new Html5Qrcode("qrReader");
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+            html5QrCode.stop().then(() => lookupStudent(decodedText)).catch(console.error);
+        },
+        () => {}
+    ).catch(() => {
+        document.getElementById("camOffPlaceholder").innerHTML = `
+            <i class="bi bi-camera-video-off" style="font-size:32px;color:var(--text-muted);"></i>
+            <span style="font-size:12px;color:var(--text-muted);">Camera access required</span>`;
+    });
+}
+
+function toggleCamera() {
+    cameraOn = !cameraOn;
+    const label = document.getElementById("camToggleLabel");
+    const track = document.getElementById("camToggleTrack");
+    const qrReader = document.getElementById("qrReader");
+    const placeholder = document.getElementById("camOffPlaceholder");
+    if (cameraOn) {
+        label.textContent = "ON";
+        track.classList.remove("cam-off");
+        qrReader.style.display = "block";
+        placeholder.style.display = "none";
+        startScanner();
+    } else {
+        label.textContent = "OFF";
+        track.classList.add("cam-off");
+        if (html5QrCode) html5QrCode.stop().catch(() => {});
+        qrReader.style.display = "none";
+        placeholder.style.display = "flex";
+    }
+}
+
+function lookupStudent(qrData) {
+    fetch("<?= BASE_PATH ?>/api/qr_lookup.php?qr=" + encodeURIComponent(qrData))
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const s = data.student;
+                document.getElementById("resultAvatarContainer").innerHTML = s.avatar_html;
+                document.getElementById("resultName").textContent = s.first_name + " " + s.last_name;
+                document.getElementById("resultNumber").textContent = s.student_number;
+                document.getElementById("resultGrade").textContent = s.grade_level + " - " + s.section;
+                document.getElementById("resultViolations").textContent = s.violation_count;
+                document.getElementById("reportBtn").href = "<?= BASE_PATH ?>/teacher/report.php?student_id=" + s.id;
+                document.getElementById("scannerSection").style.display = "none";
+                document.getElementById("resultSection").style.display = "block";
+            } else {
+                document.getElementById("errorMsg").textContent = data.message || "No student found.";
+                document.getElementById("scannerSection").style.display = "none";
+                document.getElementById("errorSection").style.display = "block";
+            }
+        })
+        .catch(() => {
+            document.getElementById("errorMsg").textContent = "Network error. Please try again.";
+            document.getElementById("scannerSection").style.display = "none";
+            document.getElementById("errorSection").style.display = "block";
+        });
+}
+
+function resetScanner() {
+    document.getElementById("resultSection").style.display = "none";
+    document.getElementById("errorSection").style.display = "none";
+    document.getElementById("scannerSection").style.display = "block";
+    if (cameraOn) startScanner();
+}
+</script>';
+
+require_once __DIR__ . '/../includes/footer.php';
 endif; ?>

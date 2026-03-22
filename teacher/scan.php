@@ -549,27 +549,18 @@ const actionParam = urlParams.get("action");
 
 if (urlQr) { 
     handleScan(urlQr); 
+} else if (actionParam === "search") {
+    // Search Student flow — skip camera, just open search
+    setTimeout(() => {
+        if (window.innerWidth < 992) {
+            showManualSearch();
+        } else {
+            const dtInput = document.getElementById('desktopSearchInput');
+            if (dtInput) dtInput.focus();
+        }
+    }, 150);
 } else { 
     startScanner(); 
-    
-    // Auto-open search if requested via URL
-    if (actionParam === "search") {
-        const tryOpenSearch = () => {
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', tryOpenSearch);
-            } else {
-                setTimeout(() => {
-                    if (window.innerWidth < 992) {
-                        showManualSearch();
-                    } else {
-                        const dtInput = document.getElementById('desktopSearchInput');
-                        if (dtInput) dtInput.focus();
-                    }
-                }, 150);
-            }
-        };
-        tryOpenSearch();
-    }
 }
 
 const processFile = async function(file) {

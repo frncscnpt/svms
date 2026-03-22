@@ -81,6 +81,33 @@ if (IS_MOBILE):
     </div>
 </div>
 
+<!-- Change Password -->
+<div class="m-section">
+    <div class="m-section-header">
+        <span class="m-section-title">Change Password</span>
+    </div>
+    <div class="m-card" style="padding:16px 18px;">
+        <form method="POST" action="<?= BASE_PATH ?>/settings.php">
+            <input type="hidden" name="action" value="change_password">
+            <div class="mb-3">
+                <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">Current Password</label>
+                <input type="password" name="current_password" class="form-control" required placeholder="Enter current password">
+            </div>
+            <div class="mb-3">
+                <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">New Password</label>
+                <input type="password" name="new_password" class="form-control" required placeholder="Min. 6 characters">
+            </div>
+            <div class="mb-3">
+                <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">Confirm Password</label>
+                <input type="password" name="confirm_password" class="form-control" required placeholder="Repeat new password">
+            </div>
+            <button type="submit" class="m-submit-btn w-100" style="justify-content:center;">
+                <i class="bi bi-check-lg me-1"></i> Update Password
+            </button>
+        </form>
+    </div>
+</div>
+
 <!-- Sign Out -->
 <div class="m-section">
     <button onclick="confirmLogout(event)" class="m-card d-flex align-items-center gap-3 w-100 text-decoration-none border-0" style="padding:16px 18px;color:#dc2626;background:#fff;cursor:pointer;">
@@ -165,7 +192,7 @@ else: // DESKTOP
 
     <!-- Right: Account Info -->
     <div class="col-lg-8">
-        <div class="card-panel">
+        <div class="card-panel mb-4">
             <div class="panel-header"><h5 class="panel-title"><i class="bi bi-person-fill"></i> Account Information</h5></div>
             <div class="panel-body">
                 <div class="row g-3">
@@ -182,6 +209,35 @@ else: // DESKTOP
                     </div>
                     <?php endforeach; ?>
                 </div>
+            </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="card-panel">
+            <div class="panel-header"><h5 class="panel-title"><i class="bi bi-shield-lock-fill"></i> Change Password</h5></div>
+            <div class="panel-body">
+                <form method="POST" action="<?= BASE_PATH ?>/settings.php">
+                    <input type="hidden" name="action" value="change_password">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" style="font-size:13px;font-weight:600;color:var(--text-muted);">Current Password</label>
+                            <input type="password" name="current_password" class="form-control" required placeholder="Enter current password">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label" style="font-size:13px;font-weight:600;color:var(--text-muted);">New Password</label>
+                            <input type="password" name="new_password" class="form-control" required placeholder="Min. 6 characters">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label" style="font-size:13px;font-weight:600;color:var(--text-muted);">Confirm Password</label>
+                            <input type="password" name="confirm_password" class="form-control" required placeholder="Repeat new password">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn-primary-custom" style="padding:10px 24px;">
+                                <i class="bi bi-check-lg"></i> Update Password
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

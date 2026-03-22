@@ -123,9 +123,6 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
                 <a href="<?= BASE_PATH ?>/student/violations.php" class="nav-link-item <?= $currentPage === 'violations' ? 'active' : '' ?>">
                     <i class="bi bi-exclamation-triangle-fill"></i> <span>My Violations</span>
                 </a>
-                <a href="<?= BASE_PATH ?>/student/uniform_pass.php" class="nav-link-item <?= $currentPage === 'uniform_pass' ? 'active' : '' ?>">
-                    <i class="bi bi-card-checklist"></i> <span>Uniform Pass</span>
-                </a>
             </div>
             <?php endif; ?>
 
@@ -222,8 +219,8 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
                     </div>
                 </div>
                 <div class="ms-1">
-                    <a href="<?= BASE_PATH ?>/settings.php" class="p-0 border-0 bg-transparent d-flex align-items-center justify-content-center" style="text-decoration:none; width:36px; height:36px;">
-                        <?= getAvatarHtml($_SESSION['avatar'] ?? null, $_SESSION['full_name'], 'profile-avatar', '', 48) ?>
+                    <a href="<?= BASE_PATH ?>/settings.php" style="text-decoration:none; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <?= getAvatarHtml($_SESSION['avatar'] ?? null, $_SESSION['full_name'], 'profile-avatar', 'width:38px!important;height:38px!important;font-size:14px!important;flex-shrink:0;', null) ?>
                     </a>
                 </div>
             </div>
