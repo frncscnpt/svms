@@ -31,6 +31,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
         exit;
     }
+
+    // Get IDs Action
+    if (isset($_GET['action']) && $_GET['action'] === 'get_ids') {
+        $grade = $_GET['grade'] ?? '';
+        $section = $_GET['section'] ?? '';
+        
+        try {
+            $stmt = $pdo->prepare("SELECT id FROM students WHERE grade_level = ? AND section = ? AND status = 'active'");
+            $stmt->execute([$grade, $section]);
+            $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            echo json_encode(['success' => true, 'ids' => $ids]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => 'Database error.']);
+        }
+        exit;
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

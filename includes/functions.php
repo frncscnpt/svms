@@ -292,9 +292,38 @@ function getManifestDataUri() {
 /**
  * Get user avatar HTML (Image or Initials fallback)
  */
-function getAvatarHtml($avatarPath, $fullName, $containerClass = 'user-avatar', $extraStyle = '') {
-    if (!empty($avatarPath)) {
-        return '<img src="' . BASE_PATH . $avatarPath . '" alt="Avatar" class="' . $containerClass . '" style="object-fit: cover; border-radius: 50%; ' . $extraStyle . '">';
+function getAvatarHtml($avatarPath, $fullName, $containerClass = 'user-avatar', $extraStyle = '', $size = null) {
+    // Ensure base class is present
+    if (strpos($containerClass, 'user-avatar') === false) {
+        $containerClass = 'user-avatar ' . $containerClass;
     }
-    return '<div class="' . $containerClass . '" ' . ($extraStyle ? 'style="' . $extraStyle . '"' : '') . '>' . getInitials($fullName) . '</div>';
+    if (empty($fullName)) $fullName = 'User';
+    $initials = getInitials($fullName);
+    
+    // Deterministic HSL color based on name (sum of chars)
+    $sum = 0;
+    for ($i = 0; $i < strlen($fullName); $i++) { $sum += ord($fullName[$i]); }
+    $hue = $sum % 360;
+    
+    $style = $extraStyle;
+    if ($size) {
+        $style .= "width:{$size}px; height:{$size}px; font-size:".($size*0.4)."px; flex-shrink:0;";
+    }
+
+    if (!empty($avatarPath)) {
+        $src = (strpos($avatarPath, 'http') === 0) ? $avatarPath : rtrim(BASE_PATH, '/') . '/' . ltrim($avatarPath, '/');
+        return '<img src="' . $src . '" alt="' . sanitize($fullName) . '" class="' . $containerClass . ' rounded-circle shadow-xs" style="object-fit: cover; ' . $style . '">';
+    }
+    
+    // Fallback style with HSL background
+    $fallbackStyle = "background: hsl({$hue}, 45%, 45%); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; border-radius: 50%; " . $style;
+    return '<div class="' . $containerClass . ' shadow-xs" style="' . $fallbackStyle . '" title="' . sanitize($fullName) . '">' . $initials . '</div>';
+}
+/**
+ * Get the currently active Academic Period ID
+ */
+function getActiveAcademicPeriodId() {
+    $pdo = getDBConnection();
+    $stmt = $pdo->query("SELECT id FROM academic_periods WHERE is_active = 1 LIMIT 1");
+    return $stmt->fetchColumn() ?: null;
 }

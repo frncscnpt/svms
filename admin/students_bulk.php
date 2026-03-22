@@ -59,6 +59,7 @@ foreach ($stm as $row) {
                             <option value="promote">Promote (Change Grade/Section)</option>
                             <option value="graduate">Mark as Graduated</option>
                             <option value="inactive">Mark as Inactive</option>
+                            <option value="print_ids">Print ID Cards for Section</option>
                         </select>
                         
                         <div id="promoteFields" style="display:none; padding-top:16px; border-top:1px dashed #ccc;">
@@ -152,11 +153,18 @@ function toggleActionFields() {
         statusWarning.style.display = 'block';
         newGrade.required = false;
         newSection.required = false;
+    } else if (action === 'print_ids') {
+        promoteFields.style.display = 'none';
+        statusWarning.style.display = 'none';
+        newGrade.required = false;
+        newSection.required = false;
+        document.getElementById('executeBtn').innerHTML = '<i class="bi bi-printer"></i> Generate ID Cards';
     } else {
         promoteFields.style.display = 'none';
         statusWarning.style.display = 'none';
         newGrade.required = false;
         newSection.required = false;
+        document.getElementById('executeBtn').innerHTML = '<i class="bi bi-check2-all"></i> Execute Bulk Action';
     }
     
     document.getElementById('previewResult').style.display = 'none';
@@ -214,6 +222,20 @@ document.getElementById('bulkForm').addEventListener('submit', function(e) {
     const action = document.getElementById('bulkAction').value;
     const targetGrade = document.getElementById('targetGrade').value;
     const targetSection = document.getElementById('targetSection').value;
+    
+    if (action === 'print_ids') {
+        // Fetch all student IDs for this grade/section
+        fetch(`<?= BASE_PATH ?>/api/bulk_students.php?action=get_ids&grade=${encodeURIComponent(targetGrade)}&section=${encodeURIComponent(targetSection)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.ids.length > 0) {
+                    window.open(`<?= BASE_PATH ?>/admin/student_id_card.php?ids=${data.ids.join(',')}`, '_blank');
+                } else {
+                    alert("No active students found in this section.");
+                }
+            });
+        return;
+    }
     
     if (!confirm(`Are you absolutely sure you want to ${action.toUpperCase()} all students in ${targetGrade} - ${targetSection}? This action cannot be easily undone.`)) {
         return;

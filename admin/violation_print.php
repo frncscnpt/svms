@@ -96,9 +96,9 @@ $actionLabels = [
             margin-bottom: 25px;
         }
         .school-logo {
-            width: 70px;
+            width: 55px;
             height: auto;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .header h1 {
             font-family: 'Times New Roman', serif;

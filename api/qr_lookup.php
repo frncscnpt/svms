@@ -41,7 +41,7 @@ if ($student) {
             'guardian_name' => $student['guardian_name'],
             'guardian_contact' => $student['guardian_contact'],
             'violation_count' => $student['violation_count'],
-            'avatar_html' => getAvatarHtml($student['photo'] ?? null, $student['first_name'] . ' ' . $student['last_name'], 'user-avatar', 'width: 48px; height: 48px; font-size: 18px; margin: 0;')
+            'avatar_html' => getAvatarHtml($student['photo'] ?? null, $student['first_name'] . ' ' . $student['last_name'], 'user-avatar', '', 48)
         ]
     ]);
 } else {

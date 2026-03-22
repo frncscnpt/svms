@@ -9,13 +9,41 @@ requireRole('admin');
 
 $pdo = getDBConnection();
 
+$period_id = $_GET['period_id'] ?? '';
+$where = "WHERE 1=1";
+$params = [];
+
+if ($period_id) {
+    $where .= " AND academic_period_id = ?";
+    $params[] = $period_id;
+}
+
 // Stats
 $totalStudents       = $pdo->query("SELECT COUNT(*) FROM students WHERE status='active'")->fetchColumn();
-$totalViolations     = $pdo->query("SELECT COUNT(*) FROM violations")->fetchColumn();
-$pendingViolations   = $pdo->query("SELECT COUNT(*) FROM violations WHERE status='pending'")->fetchColumn();
-$totalUsers          = $pdo->query("SELECT COUNT(*) FROM users WHERE status='active'")->fetchColumn();
-$thisMonthViolations = $pdo->query("SELECT COUNT(*) FROM violations WHERE MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())")->fetchColumn();
-$lastMonthViolations = $pdo->query("SELECT COUNT(*) FROM violations WHERE MONTH(created_at)=MONTH(DATE_SUB(NOW(),INTERVAL 1 MONTH)) AND YEAR(created_at)=YEAR(DATE_SUB(NOW(),INTERVAL 1 MONTH))")->fetchColumn();
+
+// Total Violations
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM violations $where");
+$stmt->execute($params);
+$totalViolations = $stmt->fetchColumn();
+
+// Pending Violations
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM violations $where AND status='pending'");
+$stmt->execute($params);
+$pendingViolations = $stmt->fetchColumn();
+
+$totalUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE status='active'")->fetchColumn();
+
+// This Month
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM violations $where AND MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())");
+$stmt->execute($params);
+$thisMonthViolations = $stmt->fetchColumn();
+
+// Last Month
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM violations $where AND MONTH(created_at)=MONTH(DATE_SUB(NOW(),INTERVAL 1 MONTH)) AND YEAR(created_at)=YEAR(DATE_SUB(NOW(),INTERVAL 1 MONTH))");
+$stmt->execute($params);
+$lastMonthViolations = $stmt->fetchColumn();
+
+$periods = $pdo->query("SELECT id, name FROM academic_periods ORDER BY start_date DESC")->fetchAll();
 
 // Trend badge helper
 function trendBadge($current, $previous, $label = 'vs last month') {
@@ -27,34 +55,42 @@ function trendBadge($current, $previous, $label = 'vs last month') {
 }
 
 // Recent violations
-$recentViolations = $pdo->query("
-    SELECT v.*, s.first_name, s.last_name, s.student_number, vt.name as violation_name, vt.severity,
+$recentViolations = $pdo->prepare("
+    SELECT v.*, s.first_name, s.last_name, s.student_number, s.photo, vt.name as violation_name, vt.severity,
            u.full_name as reporter_name
     FROM violations v
     JOIN students s ON v.student_id = s.id
     JOIN violation_types vt ON v.violation_type_id = vt.id
     JOIN users u ON v.reported_by = u.id
+    $where
     ORDER BY v.created_at DESC LIMIT 8
-")->fetchAll();
+");
+$recentViolations->execute($params);
+$recentViolations = $recentViolations->fetchAll();
 
 // Violations by type (for chart)
-$violationsByType = $pdo->query("
+$vWhere = $where === "WHERE 1=1" ? "" : "WHERE v.academic_period_id = ?";
+$violationsByType = $pdo->prepare("
     SELECT vt.name, COUNT(v.id) as count
     FROM violation_types vt
-    LEFT JOIN violations v ON vt.id = v.violation_type_id
+    LEFT JOIN violations v ON vt.id = v.violation_type_id $vWhere
     GROUP BY vt.id, vt.name
     HAVING count > 0
     ORDER BY count DESC LIMIT 8
-")->fetchAll();
+");
+$violationsByType->execute($params);
+$violationsByType = $violationsByType->fetchAll();
 
 // Monthly trend
-$monthlyTrend = $pdo->query("
+$monthlyTrend = $pdo->prepare("
     SELECT DATE_FORMAT(created_at, '%b %Y') as month, COUNT(*) as count
     FROM violations
-    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+    $where AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
     GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%b %Y')
     ORDER BY MIN(created_at)
-")->fetchAll();
+");
+$monthlyTrend->execute($params);
+$monthlyTrend = $monthlyTrend->fetchAll();
 
 // Recent activity
 $recentActivity = $pdo->query("
@@ -64,7 +100,24 @@ $recentActivity = $pdo->query("
 ")->fetchAll();
 ?>
 
-<!-- ── Stat Cards ── -->
+<!-- ── Dashboard Header ── -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <p class="text-muted mb-0" style="font-size:13px;">Welcome back, <?= sanitize($_SESSION['full_name']) ?></p>
+    </div>
+    <form method="GET" class="d-flex align-items-center gap-2">
+        <span class="text-muted small fw-bold">Academic Period:</span>
+        <select name="period_id" class="form-select form-select-sm" style="width: 200px;" onchange="this.form.submit()">
+            <option value="">All Time</option>
+            <?php foreach ($periods as $p): ?>
+            <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <?php if ($period_id): ?>
+            <a href="<?= BASE_PATH ?>/admin/dashboard.php" class="btn btn-link btn-sm text-secondary text-decoration-none p-0">Clear</a>
+        <?php endif; ?>
+    </form>
+</div>
 <div class="row g-3 mb-4">
     <div class="col-sm-6 col-xl-3">
         <div class="stat-card stat-purple animate-slideUp stagger-1">

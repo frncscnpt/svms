@@ -84,27 +84,35 @@ self.addEventListener('fetch', event => {
 
 // Push - show native notification
 self.addEventListener('push', event => {
-    let data = { title: 'Notification', message: 'You have a new alert.' };
-    
-    if (event.data) {
+    // If we have data, use it. If not (standalone VAPID), fetch latest from API
+    let promise;
+    if (event.data && event.data.text()) {
         try {
-            data = event.data.json();
+            const data = event.data.json();
+            promise = Promise.resolve(data);
         } catch (e) {
-            data.message = event.data.text();
+            promise = Promise.resolve({ title: 'SVMS', message: event.data.text() });
         }
+    } else {
+        // Fetch from API (uses browser cookies automatically)
+        promise = fetch('/api/get_latest_notification.php')
+            .then(res => res.json())
+            .catch(() => ({ title: 'SVMS', message: 'You have a new alert.' }));
     }
 
-    const options = {
-        body: data.message,
-        icon: '/assets/images/logo-icon.png',
-        badge: '/assets/images/logo-icon.png',
-        data: {
-            url: data.link || '/notifications.php'
-        }
-    };
-
     event.waitUntil(
-        self.registration.showNotification(data.title, options)
+        promise.then(data => {
+            const options = {
+                body: data.message,
+                icon: '/assets/images/logo-icon.png',
+                badge: '/assets/images/logo-icon.png',
+                vibrate: [100, 50, 100],
+                data: {
+                    url: data.link || '/notifications.php'
+                }
+            };
+            return self.registration.showNotification(data.title, options);
+        })
     );
 });
 

@@ -65,11 +65,24 @@ CREATE TABLE violation_types (
 ) ENGINE=InnoDB;
 
 -- ============================================
+-- ACADEMIC PERIODS TABLE
+-- ============================================
+CREATE TABLE academic_periods (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    is_active BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ============================================
 -- VIOLATIONS TABLE
 -- ============================================
 CREATE TABLE violations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
+    academic_period_id INT NOT NULL,
     violation_type_id INT NOT NULL,
     reported_by INT NOT NULL,
     description TEXT DEFAULT NULL,
@@ -80,6 +93,7 @@ CREATE TABLE violations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_violations_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT fk_violations_period FOREIGN KEY (academic_period_id) REFERENCES academic_periods(id) ON DELETE RESTRICT,
     CONSTRAINT fk_violations_type FOREIGN KEY (violation_type_id) REFERENCES violation_types(id) ON DELETE RESTRICT,
     CONSTRAINT fk_violations_reporter FOREIGN KEY (reported_by) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
@@ -163,6 +177,7 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 CREATE TABLE uniform_passes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
+    academic_period_id INT NOT NULL,
     pass_code VARCHAR(100) NOT NULL UNIQUE,
     reason TEXT NOT NULL,
     issued_by INT NOT NULL,
@@ -170,6 +185,7 @@ CREATE TABLE uniform_passes (
     status ENUM('active', 'expired', 'revoked') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_pass_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT fk_pass_period FOREIGN KEY (academic_period_id) REFERENCES academic_periods(id) ON DELETE RESTRICT,
     CONSTRAINT fk_pass_issuer FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
@@ -188,7 +204,9 @@ CREATE INDEX idx_activity_user ON activity_log(user_id);
 CREATE INDEX idx_activity_date ON activity_log(created_at);
 CREATE INDEX idx_pass_code ON uniform_passes(pass_code);
 CREATE INDEX idx_pass_student ON uniform_passes(student_id);
+CREATE INDEX idx_pass_period ON uniform_passes(academic_period_id);
 CREATE INDEX idx_pass_date ON uniform_passes(valid_date);
+CREATE INDEX idx_violations_period ON violations(academic_period_id);
 
 -- ============================================
 -- SEED DATA
@@ -204,7 +222,7 @@ INSERT INTO users (username, password, full_name, email, role, status) VALUES
 
 -- Default Teacher (password: teacher123)
 INSERT INTO users (username, password, full_name, email, role, status) VALUES
-('teacher1', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Juan Dela Cruz', 'jdelacruz@lsb.edu.ph', 'teacher', 'active');
+('teacher', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Juan Dela Cruz', 'jdelacruz@lsb.edu.ph', 'teacher', 'active');
 
 -- Violation Types
 INSERT INTO violation_types (name, severity, description) VALUES
@@ -222,6 +240,10 @@ INSERT INTO violation_types (name, severity, description) VALUES
 ('Theft', 'critical', 'Taking property belonging to others without consent'),
 ('Bringing Prohibited Items', 'major', 'Bringing items not allowed within school premises'),
 ('Academic Dishonesty', 'major', 'Plagiarism or falsification of academic records');
+
+-- Academic Periods
+INSERT INTO academic_periods (name, start_date, end_date, is_active) VALUES
+('SY 2024-2025', '2024-06-01', '2025-05-31', 1);
 
 -- Sample Students
 INSERT INTO students (student_number, first_name, last_name, middle_name, gender, grade_level, section, contact, guardian_name, guardian_contact) VALUES
@@ -245,10 +267,10 @@ INSERT INTO qr_codes (student_id, qr_data) VALUES
 (5, 'LSB-STU-e5f6a7b8-c9d0-1234-efab-345678901234');
 
 -- Sample Violations
-INSERT INTO violations (student_id, violation_type_id, reported_by, description, location, date_occurred, status) VALUES
-(1, 1, 3, 'Student arrived 15 minutes late to first period class', 'Room 201', '2026-03-10 07:45:00', 'reviewed'),
-(1, 3, 3, 'Student not wearing proper ID and school uniform', 'Main Gate', '2026-03-11 07:30:00', 'pending'),
-(2, 6, 3, 'Caught using notes during quiz', 'Room 305', '2026-03-09 10:00:00', 'resolved');
+INSERT INTO violations (student_id, academic_period_id, violation_type_id, reported_by, description, location, date_occurred, status) VALUES
+(1, 1, 1, 3, 'Student arrived 15 minutes late to first period class', 'Room 201', '2026-03-10 07:45:00', 'reviewed'),
+(1, 1, 3, 3, 'Student not wearing proper ID and school uniform', 'Main Gate', '2026-03-11 07:30:00', 'pending'),
+(2, 1, 6, 3, 'Caught using notes during quiz', 'Room 305', '2026-03-09 10:00:00', 'resolved');
 
 -- Sample Disciplinary Actions
 INSERT INTO disciplinary_actions (violation_id, action_type, description, issued_by, status) VALUES

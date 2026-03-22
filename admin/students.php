@@ -222,6 +222,9 @@ $grades = $pdo->query("SELECT DISTINCT grade_level FROM students WHERE status='a
                                     <i class="bi bi-qr-code"></i>
                                 </button>
                             <?php endif; ?>
+                            <a href="<?= BASE_PATH ?>/admin/student_id_card.php?ids=<?= $s['id'] ?>" class="action-btn" title="Print ID" target="_blank">
+                                <i class="bi bi-person-badge"></i>
+                            </a>
                             <a href="?edit=<?= $s['id'] ?>#studentModal" class="action-btn" title="Edit"
                                onclick="editStudent(<?= htmlspecialchars(json_encode($s)) ?>)">
                                 <i class="bi bi-pencil"></i>

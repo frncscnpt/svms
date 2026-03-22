@@ -13,9 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $passCode = 'TUP-' . generateUUID();
         $validDate = $_POST['valid_date'] ?: date('Y-m-d');
         
-        $stmt = $pdo->prepare("INSERT INTO uniform_passes (student_id, pass_code, reason, issued_by, valid_date, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO uniform_passes (student_id, academic_period_id, pass_code, reason, issued_by, valid_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $_POST['student_id'],
+            getActiveAcademicPeriodId(),
             $passCode,
             sanitize($_POST['reason']),
             $_SESSION['user_id'],

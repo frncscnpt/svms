@@ -12,15 +12,19 @@ $pdo = getDBConnection();
 $search = $_GET['search'] ?? '';
 $severity = $_GET['severity'] ?? '';
 $status = $_GET['status'] ?? '';
+$period_id = $_GET['period_id'] ?? '';
 $where = "WHERE 1=1";
 $params = [];
 
 if ($search) { $where .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_number LIKE ?)"; $params = array_merge($params, ["%$search%","%$search%","%$search%"]); }
 if ($severity) { $where .= " AND vt.severity=?"; $params[] = $severity; }
 if ($status) { $where .= " AND v.status=?"; $params[] = $status; }
+if ($period_id) { $where .= " AND v.academic_period_id=?"; $params[] = $period_id; }
+
+$periods = $pdo->query("SELECT id, name FROM academic_periods ORDER BY start_date DESC")->fetchAll();
 
 $stmt = $pdo->prepare("
-    SELECT v.*, s.first_name, s.last_name, s.student_number, vt.name as violation_name, vt.severity,
+    SELECT v.*, s.first_name, s.last_name, s.student_number, s.photo, vt.name as violation_name, vt.severity,
            u.full_name as reporter_name,
            (SELECT da.action_type FROM disciplinary_actions da WHERE da.violation_id=v.id ORDER BY da.created_at DESC LIMIT 1) as action_taken
     FROM violations v
@@ -60,6 +64,12 @@ $violations = $stmt->fetchAll();
             <option value="reviewed" <?= $status==='reviewed'?'selected':'' ?>>Reviewed</option>
             <option value="resolved" <?= $status==='resolved'?'selected':'' ?>>Resolved</option>
         </select>
+        <select name="period_id" class="form-select" style="width:auto">
+            <option value="">All Periods</option>
+            <?php foreach ($periods as $p): ?>
+            <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
         <button type="submit" class="btn-primary-custom"><i class="bi bi-funnel"></i> Filter</button>
         <?php if ($search || $severity || $status): ?>
             <a href="<?= BASE_PATH ?>/admin/violations.php" class="btn btn-outline-secondary btn-sm">Clear</a>
@@ -76,7 +86,7 @@ $violations = $stmt->fetchAll();
                 <tr>
                     <td>
                         <div class="user-cell">
-                            <?= getAvatarHtml($v['photo'] ?? null, $v['first_name'].' '.$v['last_name'], 'user-avatar') ?>
+                                <?= getAvatarHtml($v['photo'] ?? null, $v['first_name'] . ' ' . $v['last_name'], 'user-avatar-sm') ?>
                             <div class="user-info">
                                 <div class="name"><?= sanitize($v['first_name'].' '.$v['last_name']) ?></div>
                                 <div class="sub"><?= sanitize($v['student_number']) ?></div>

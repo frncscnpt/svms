@@ -13,9 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $passCode = 'TUP-' . generateUUID();
         $validDate = $_POST['valid_date'] ?: date('Y-m-d');
         
-        $stmt = $pdo->prepare("INSERT INTO uniform_passes (student_id, pass_code, reason, issued_by, valid_date, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO uniform_passes (student_id, academic_period_id, pass_code, reason, issued_by, valid_date, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $_POST['student_id'],
+            getActiveAcademicPeriodId(),
             $passCode,
             sanitize($_POST['reason']),
             $_SESSION['user_id'],
@@ -95,25 +96,31 @@ $activePasses = $stmtActivePasses->fetchAll();
 
 // Search + history (excludes today's active passes - shown in Active section above)
 $search = $_GET['search'] ?? '';
+$period_id = $_GET['period_id'] ?? '';
 $today = date('Y-m-d');
 $historyBaseWhere = "NOT (up.status = 'active' AND up.valid_date = ?)";
 $historyParams = [$today];
+
 if ($search) {
-    $historyWhere = "AND $historyBaseWhere AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_number LIKE ? OR up.pass_code LIKE ?)";
-    $searchLike = "%$search%";
-    $historyParams = [$today, $searchLike, $searchLike, $searchLike, $searchLike];
-} else {
-    $historyWhere = "AND $historyBaseWhere";
+    $historyBaseWhere .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_number LIKE ? OR up.pass_code LIKE ?)";
+    $historyParams = array_merge($historyParams, ["%$search%", "%$search%", "%$search%", "%$search%"]);
 }
+
+if ($period_id) {
+    $historyBaseWhere .= " AND up.academic_period_id = ?";
+    $historyParams[] = $period_id;
+}
+
+$periods = $pdo->query("SELECT id, name FROM academic_periods ORDER BY start_date DESC")->fetchAll();
 
 $page = max(1, intval($_GET['page'] ?? 1));
 $historyResult = paginate(
-    "SELECT up.*, s.first_name, s.last_name, s.student_number, s.grade_level, s.section,
+    "SELECT up.*, s.first_name, s.last_name, s.student_number, s.grade_level, s.section, s.photo,
             u.full_name AS issued_by_name
      FROM uniform_passes up
      JOIN students s ON up.student_id = s.id
      JOIN users u ON up.issued_by = u.id
-     WHERE 1=1 $historyWhere
+     WHERE $historyBaseWhere
      ORDER BY up.created_at DESC",
     $historyParams, $page, 15
 );
@@ -208,11 +215,20 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
 
 <h5 class="mb-3 fw-bold" style="font-size:16px;">Pass History</h5>
 <div class="card-panel">
-    <form method="GET" class="mb-3">
+    <form method="GET" class="mb-3 d-flex gap-2">
         <div class="input-group">
             <input type="text" class="form-control" name="search" placeholder="Search by name, student number, or pass code..." value="<?= sanitize($search) ?>">
             <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
         </div>
+        <select name="period_id" class="form-select" style="max-width:200px;" onchange="this.form.submit()">
+            <option value="">All Periods</option>
+            <?php foreach ($periods as $p): ?>
+            <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <?php if ($search || $period_id): ?>
+            <a href="<?= BASE_PATH ?>/admin/uniform_passes.php" class="btn btn-outline-secondary">Clear</a>
+        <?php endif; ?>
     </form>
 
     <div class="data-table-wrapper">

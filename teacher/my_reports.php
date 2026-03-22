@@ -18,27 +18,47 @@ requireRole('teacher');
 
 $pdo = getDBConnection();
 
-$reports = $pdo->prepare("
+$period_id = $_GET['period_id'] ?? '';
+$where = "WHERE v.reported_by=?";
+$params = [$_SESSION['user_id']];
+
+if ($period_id) {
+    $where .= " AND v.academic_period_id=?";
+    $params[] = $period_id;
+}
+
+$reports_stmt = $pdo->prepare("
     SELECT v.*, s.first_name, s.last_name, s.student_number, s.grade_level, s.photo,
            vt.name as violation_name, vt.severity,
-           (SELECT da.action_type FROM disciplinary_actions da WHERE da.violation_id=v.id LIMIT 1) as action_taken
+           (SELECT da.action_type FROM disciplinary_actions da WHERE da.violation_id=v.id ORDER BY da.created_at DESC LIMIT 1) as action_taken
     FROM violations v
     JOIN students s ON v.student_id=s.id
     JOIN violation_types vt ON v.violation_type_id=vt.id
-    WHERE v.reported_by=?
+    $where
     ORDER BY v.created_at DESC
 ");
-$reports->execute([$_SESSION['user_id']]);
-$reports = $reports->fetchAll();
+$reports_stmt->execute($params);
+$reports = $reports_stmt->fetchAll();
+
+$periods = $pdo->query("SELECT id, name FROM academic_periods ORDER BY start_date DESC")->fetchAll();
 
 if (IS_MOBILE):
 ?>
 
 <!-- Section Header -->
-<div class="m-section-header mb-3">
+<div class="m-section-header mb-2">
     <span class="m-section-title">My Reports</span>
     <a href="<?= BASE_PATH ?>/teacher/scan.php" class="m-pill purple"><i class="bi bi-plus-lg me-1"></i>New</a>
 </div>
+
+<form method="GET" class="mb-3 px-3">
+    <select name="period_id" class="form-select form-select-sm rounded-pill bg-light border-0" onchange="this.form.submit()">
+        <option value="">All Periods</option>
+        <?php foreach ($periods as $p): ?>
+        <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
+        <?php endforeach; ?>
+    </select>
+</form>
 
 <?php if (empty($reports)): ?>
 <div class="m-card">
@@ -88,6 +108,21 @@ else: // DESKTOP ?>
         </a>
     </div>
 
+    <div class="panel-body border-bottom bg-light py-2">
+        <form method="GET" class="d-flex align-items-center gap-2 px-1">
+            <span class="text-muted small fw-bold">Academic Period:</span>
+            <select name="period_id" class="form-select form-select-sm" style="width: 200px;" onchange="this.form.submit()">
+                <option value="">All Periods</option>
+                <?php foreach ($periods as $p): ?>
+                <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <?php if ($period_id): ?>
+                <a href="<?= BASE_PATH ?>/teacher/my_reports.php" class="btn btn-link btn-sm text-secondary text-decoration-none">Clear</a>
+            <?php endif; ?>
+        </form>
+    </div>
+
     <?php if (empty($reports)): ?>
     <div class="panel-body text-center py-5">
         <i class="bi bi-file-text" style="font-size:52px;color:#ede9ee;"></i>
@@ -111,7 +146,7 @@ else: // DESKTOP ?>
             <tr>
                 <td>
                     <div class="user-cell">
-                        <?= getAvatarHtml($r['photo'] ?? null, $r['first_name'].' '.$r['last_name'], 'user-avatar', 'width:34px;height:34px;font-size:12px;margin:0;flex-shrink:0;') ?>
+                                <?= getAvatarHtml($r['photo'] ?? null, $r['first_name'] . ' ' . $r['last_name'], 'user-avatar') ?>
                         <div class="user-info">
                             <div class="name"><?= sanitize($r['first_name'].' '.$r['last_name']) ?></div>
                             <div class="sub"><?= sanitize($r['student_number']) ?></div>

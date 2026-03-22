@@ -16,9 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($upload['success']) $evidencePath = $upload['path'];
         }
         
-        $stmt = $pdo->prepare("INSERT INTO violations (student_id, violation_type_id, reported_by, description, evidence_path, location, date_occurred, status) VALUES (?,?,?,?,?,?,?,?)");
+        $stmt = $pdo->prepare("INSERT INTO violations (student_id, academic_period_id, violation_type_id, reported_by, description, evidence_path, location, date_occurred, status) VALUES (?,?,?,?,?,?,?,?,?)");
         $stmt->execute([
             $_POST['student_id'],
+            getActiveAcademicPeriodId(),
             $_POST['violation_type_id'],
             $_SESSION['user_id'],
             sanitize($_POST['description'] ?? ''),

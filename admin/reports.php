@@ -10,7 +10,23 @@ $pdo = getDBConnection();
 $reportType = $_GET['type'] ?? 'summary';
 $dateFrom = $_GET['from'] ?? date('Y-m-01');
 $dateTo = $_GET['to'] ?? date('Y-m-d');
+$period_id = $_GET['period_id'] ?? '';
 $gradeFilter = $_GET['grade'] ?? '';
+
+// Build Where Clause
+$where = "WHERE 1=1";
+$params = [];
+
+if ($period_id) {
+    $where .= " AND v.academic_period_id = ?";
+    $params[] = $period_id;
+} else {
+    $where .= " AND v.date_occurred BETWEEN ? AND ?";
+    $params[] = $dateFrom;
+    $params[] = $dateTo . ' 23:59:59';
+}
+
+$periods = $pdo->query("SELECT id, name, start_date, end_date FROM academic_periods ORDER BY start_date DESC")->fetchAll();
 
 // Export CSV (must be before any HTML output)
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
@@ -18,8 +34,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     header('Content-Disposition: attachment; filename="violations_report_' . date('Y-m-d') . '.csv"');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['Student No', 'Student Name', 'Grade', 'Section', 'Violation', 'Severity', 'Status', 'Date', 'Reported By']);
-    $export = $pdo->prepare("SELECT s.student_number, CONCAT(s.first_name,' ',s.last_name) as name, s.grade_level, s.section, vt.name as violation, vt.severity, v.status, v.date_occurred, u.full_name as reporter FROM violations v JOIN students s ON v.student_id=s.id JOIN violation_types vt ON v.violation_type_id=vt.id JOIN users u ON v.reported_by=u.id WHERE v.date_occurred BETWEEN ? AND ? ORDER BY v.date_occurred DESC");
-    $export->execute([$dateFrom, $dateTo . ' 23:59:59']);
+    $export = $pdo->prepare("SELECT s.student_number, CONCAT(s.first_name,' ',s.last_name) as name, s.grade_level, s.section, vt.name as violation, vt.severity, v.status, v.date_occurred, u.full_name as reporter FROM violations v JOIN students s ON v.student_id=s.id JOIN violation_types vt ON v.violation_type_id=vt.id JOIN users u ON v.reported_by=u.id $where ORDER BY v.date_occurred DESC");
+    $export->execute($params);
     while ($row = $export->fetch()) { fputcsv($out, $row); }
     fclose($out);
     exit;
@@ -39,29 +55,29 @@ $summaryQuery = "SELECT
     SUM(CASE WHEN v.status='pending' THEN 1 ELSE 0 END) as pending_count,
     SUM(CASE WHEN v.status='resolved' THEN 1 ELSE 0 END) as resolved_count
     FROM violations v JOIN violation_types vt ON v.violation_type_id=vt.id
-    WHERE v.date_occurred BETWEEN ? AND ?";
+    $where";
 $summaryStmt = $pdo->prepare($summaryQuery);
-$summaryStmt->execute([$dateFrom, $dateTo . ' 23:59:59']);
+$summaryStmt->execute($params);
 $summary = $summaryStmt->fetch();
 
 // Top violators
 $topViolators = $pdo->prepare("
-    SELECT s.student_number, s.first_name, s.last_name, s.grade_level, s.section, COUNT(v.id) as count
+    SELECT s.student_number, s.first_name, s.last_name, s.grade_level, s.section, s.photo, COUNT(v.id) as count
     FROM violations v JOIN students s ON v.student_id=s.id
-    WHERE v.date_occurred BETWEEN ? AND ?
+    $where
     GROUP BY s.id ORDER BY count DESC LIMIT 10
 ");
-$topViolators->execute([$dateFrom, $dateTo . ' 23:59:59']);
+$topViolators->execute($params);
 $topViolators = $topViolators->fetchAll();
 
 // By type
 $byType = $pdo->prepare("
     SELECT vt.name, vt.severity, COUNT(v.id) as count
     FROM violations v JOIN violation_types vt ON v.violation_type_id=vt.id
-    WHERE v.date_occurred BETWEEN ? AND ?
+    $where
     GROUP BY vt.id ORDER BY count DESC
 ");
-$byType->execute([$dateFrom, $dateTo . ' 23:59:59']);
+$byType->execute($params);
 $byType = $byType->fetchAll();
 
 // Fetch paginated records
@@ -73,9 +89,9 @@ $recordsResult = paginate(
     JOIN students s ON v.student_id=s.id 
     JOIN violation_types vt ON v.violation_type_id=vt.id 
     JOIN users u ON v.reported_by=u.id 
-    WHERE v.date_occurred BETWEEN ? AND ? 
+    $where
     ORDER BY v.date_occurred DESC",
-    [$dateFrom, $dateTo . ' 23:59:59'], 
+    $params, 
     $page, 20
 );
 ?>
@@ -92,20 +108,45 @@ $recordsResult = paginate(
     </div>
 </div>
 
-<!-- Date Filter -->
+<!-- Filter Section -->
 <div class="card-panel mb-4">
     <form class="filter-bar" method="GET">
-        <div>
-            <label class="form-label mb-1" style="font-size:11px;">From</label>
-            <input type="date" class="form-control" name="from" value="<?= $dateFrom ?>">
+        <div style="min-width: 250px;">
+            <label class="form-label mb-1" style="font-size:11px;">Search by Academic Period</label>
+            <select name="period_id" class="form-select" onchange="toggleDateFilter(this)">
+                <option value="">Custom Date Range</option>
+                <?php foreach ($periods as $p): ?>
+                <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?> 
+                        data-start="<?= $p['start_date'] ?>" data-end="<?= $p['end_date'] ?>">
+                    <?= htmlspecialchars($p['name']) ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
         </div>
-        <div>
-            <label class="form-label mb-1" style="font-size:11px;">To</label>
-            <input type="date" class="form-control" name="to" value="<?= $dateTo ?>">
+        <div id="dateFilterSection" style="<?= $period_id ? 'display:none;' : '' ?>" class="d-flex gap-2">
+            <div>
+                <label class="form-label mb-1" style="font-size:11px;">From</label>
+                <input type="date" class="form-control" name="from" id="dateFrom" value="<?= $dateFrom ?>">
+            </div>
+            <div>
+                <label class="form-label mb-1" style="font-size:11px;">To</label>
+                <input type="date" class="form-control" name="to" id="dateTo" value="<?= $dateTo ?>">
+            </div>
         </div>
-        <button type="submit" class="btn-primary-custom" style="margin-top:18px;"><i class="bi bi-funnel"></i> Generate</button>
+        <button type="submit" class="btn-primary-custom" style="margin-top:18px;"><i class="bi bi-funnel"></i> Apply Filter</button>
     </form>
 </div>
+
+<script>
+function toggleDateFilter(select) {
+    const section = document.getElementById('dateFilterSection');
+    if (select.value) {
+        section.style.display = 'none';
+    } else {
+        section.style.display = 'flex';
+    }
+}
+</script>
 
 <!-- Summary Cards -->
 <div class="row g-3 mb-4">
@@ -161,7 +202,7 @@ $recordsResult = paginate(
                             <td><?= $i+1 ?></td>
                             <td>
                                 <div class="user-cell">
-                                    <?= getAvatarHtml($tv['photo'] ?? null, $tv['first_name'].' '.$tv['last_name'], 'user-avatar', 'width:30px;height:30px;font-size:11px;') ?>
+                                    <?= getAvatarHtml($tv['photo'] ?? null, $tv['first_name'].' '.$tv['last_name'], 'user-avatar', '', 30) ?>
                                     <div class="user-info"><div class="name"><?= sanitize($tv['first_name'].' '.$tv['last_name']) ?></div></div>
                                 </div>
                             </td>

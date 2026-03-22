@@ -66,6 +66,9 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
                 <a href="<?= BASE_PATH ?>/admin/uniform_passes.php" class="nav-link-item <?= $currentPage === 'uniform_passes' ? 'active' : '' ?>">
                     <i class="bi bi-card-checklist"></i> <span>Uniform Passes</span>
                 </a>
+                <a href="<?= BASE_PATH ?>/admin/academic_periods.php" class="nav-link-item <?= $currentPage === 'academic_periods' ? 'active' : '' ?>">
+                    <i class="bi bi-calendar-range-fill"></i> <span>Academic Periods</span>
+                </a>
                 <a href="<?= BASE_PATH ?>/admin/reports.php" class="nav-link-item <?= $currentPage === 'reports' ? 'active' : '' ?>">
                     <i class="bi bi-file-earmark-bar-graph-fill"></i> <span>Reports</span>
                 </a>
@@ -219,8 +222,8 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
                     </div>
                 </div>
                 <div class="ms-1">
-                    <a href="<?= BASE_PATH ?>/settings.php" class="topbar-btn d-flex align-items-center justify-content-center p-0" style="border-radius: 50%; overflow: hidden; width: 36px; height: 36px; text-decoration:none;">
-                        <?= getAvatarHtml($_SESSION['avatar'] ?? null, $_SESSION['full_name'], 'profile-avatar', 'width: 100%; height: 100%; font-size: 14px; margin: 0;') ?>
+                    <a href="<?= BASE_PATH ?>/settings.php" class="p-0 border-0 bg-transparent d-flex align-items-center justify-content-center" style="text-decoration:none; width:36px; height:36px;">
+                        <?= getAvatarHtml($_SESSION['avatar'] ?? null, $_SESSION['full_name'], 'profile-avatar', '', 48) ?>
                     </a>
                 </div>
             </div>

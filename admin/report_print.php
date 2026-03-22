@@ -63,9 +63,9 @@ $currentUser = getCurrentUser();
             margin-bottom: 30px;
         }
         .school-logo {
-            width: 70px;
+            width: 55px;
             height: auto;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .header h1 {
             font-family: 'Times New Roman', serif;

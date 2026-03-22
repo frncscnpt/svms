@@ -10,16 +10,20 @@ const PushManager = {
 
     async init() {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            console.warn('Push messaging is not supported');
+            alert('Push messaging is NOT supported in this browser.');
             return;
         }
 
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
 
-        if (subscription) {
-            console.log('User is already subscribed to push');
-            this.sendSubscriptionToServer(subscription);
+            if (subscription) {
+                console.log('User is already subscribed to push');
+                this.sendSubscriptionToServer(subscription);
+            }
+        } catch (err) {
+            alert('Service Worker Error: ' + err.message);
         }
     },
 
@@ -31,30 +35,41 @@ const PushManager = {
                 applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey)
             });
 
-            console.log('User subscribed successfully');
+            alert('Subscription successful! Saving to server...');
             await this.sendSubscriptionToServer(sub);
             return true;
         } catch (err) {
+            alert('Subscription Failed: ' + err.message);
             console.error('Failed to subscribe user: ', err);
             return false;
         }
     },
 
     async sendSubscriptionToServer(subscription) {
-        const key = subscription.getKey('p256dh');
-        const token = subscription.getKey('auth');
-        const contentEncoding = (PushManager.supportedContentEncoding || 'aesgcm');
+        try {
+            const key = subscription.getKey('p256dh');
+            const token = subscription.getKey('auth');
 
-        return fetch('/api/save_subscription.php', {
-            method: 'POST',
-            body: JSON.stringify({
-                endpoint: subscription.endpoint,
-                keys: {
-                    p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(key))),
-                    auth: btoa(String.fromCharCode.apply(null, new Uint8Array(token)))
-                }
-            })
-        });
+            const res = await fetch('/api/save_subscription.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                    endpoint: subscription.endpoint,
+                    keys: {
+                        p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(key))),
+                        auth: btoa(String.fromCharCode.apply(null, new Uint8Array(token)))
+                    }
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                alert('Push Token saved successfully!');
+            } else {
+                alert('Server Error: ' + (data.message || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Fetch Error: ' + err.message);
+        }
     },
 
     urlBase64ToUint8Array(base64String) {
@@ -74,22 +89,41 @@ const PushManager = {
 };
 
 // Auto-init on page load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     PushManager.init();
 
-    // Show/hide the "Enable Alerts" button based on current permission
     const btn = document.getElementById('enablePushBtn');
-    if (btn && 'Notification' in window) {
-        if (Notification.permission === 'default') {
-            btn.style.display = 'inline-block';
-        } else if (Notification.permission === 'granted') {
-            btn.style.display = 'none';
-        } else {
-            // Denied — show a disabled state
+    if (!btn) return;
+
+    // Push requires Secure Context (HTTPS or localhost)
+    if (!window.isSecureContext) {
+        alert('DEBUG: Not in a Secure Context (HTTPS). Push will fail.');
+        console.warn('Push alerts require an HTTPS connection.');
+        btn.innerHTML = '<i class="bi bi-shield-lock me-1"></i>Need HTTPS';
+        btn.disabled = true;
+        btn.style.display = 'inline-block';
+        return;
+    }
+
+    if (!('Notification' in window)) {
+        btn.style.display = 'none';
+        return;
+    }
+
+    // Check if we are already subscribed
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+        // No subscription found, show the button
+        btn.style.display = 'inline-block';
+        if (Notification.permission === 'denied') {
             btn.textContent = 'Alerts Blocked';
             btn.disabled = true;
-            btn.style.display = 'inline-block';
         }
+    } else {
+        // Already subscribed, hide it
+        btn.style.display = 'none';
     }
 });
 
