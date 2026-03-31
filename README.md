@@ -14,16 +14,21 @@ Built for Lyceum of Subic Bay, this system digitizes the entire violation manage
 ## Features
 
 - **User Authentication** - Role-based login (Admin, Discipline Officer, Teacher, Student)
-- **QR Code Scanner** - Quick student identification and lookup
-- **Violation Reporting** - Teachers can report violations with evidence upload
-- **Disciplinary Actions** - Track warnings, detentions, suspensions, and counseling
-- **Uniform Pass System** - Issue temporary passes for uniform violations
-- **Real-time Notifications** - Push notifications for violation updates
-- **Academic Period Management** - Organize records by school year
-- **Reports & Analytics** - Generate violation reports and statistics
-- **Student Profiles** - View violation history and disciplinary records
-- **Responsive Design** - Mobile-first design that works on all devices
-- **PWA Support** - Install as a Progressive Web App
+- **QR Code Scanner** - Quick student identification and lookup via camera
+- **Violation Reporting** - Teachers can report violations with evidence upload (images)
+- **Disciplinary Actions** - Track warnings, detentions, suspensions, counseling, and community service
+- **Uniform Pass System** - Issue and manage temporary passes for uniform violations
+- **Real-time Push Notifications** - Web push notifications for violation updates and actions
+- **Academic Period Management** - Organize records by school year/semester
+- **Reports & Analytics** - Generate comprehensive violation reports with statistics
+- **PDF Export** - Download violation reports and individual violation records as PDF
+- **CSV Export** - Export violation data to CSV format for analysis
+- **Excel Import** - Bulk import students via Excel template (.xlsx)
+- **Student ID Card Generator** - Generate printable ID cards with QR codes and photos
+- **Student Profiles** - View complete violation history and disciplinary records
+- **Evidence Management** - Upload and view photo evidence for violations
+- **Responsive Design** - Mobile-first design that works seamlessly on all devices
+- **PWA Support** - Install as a Progressive Web App for offline access
 
 ---
 
@@ -33,11 +38,13 @@ Built for Lyceum of Subic Bay, this system digitizes the entire violation manage
 - **Backend:** PHP 7.4+
 - **Database:** MySQL 5.7+ / MariaDB
 - **Server:** Apache (XAMPP)
-- **Libraries:** 
-  - SimpleXLSX (Excel import/export)
-  - Web Push API (Push notifications)
-  - QR Code generation
-- **PWA:** Service Worker for offline support
+- **Libraries & Tools:** 
+  - SimpleXLSX/SimpleXLSXGen (Excel import/export)
+  - Web Push API with VAPID (Push notifications)
+  - html2pdf.js (PDF generation)
+  - QR Code generation and scanning
+  - Composer (Dependency management)
+- **PWA:** Service Worker for offline support and installability
 
 ---
 
@@ -80,10 +87,11 @@ Built for Lyceum of Subic Bay, this system digitizes the entire violation manage
 
 **Sample Workflow:**
 
-1. **Teacher** logs in → Scans student QR code → Reports violation with evidence
-2. **Discipline Officer** reviews violation → Issues disciplinary action
-3. **Student** receives notification → Views violation details and action status
-4. **Admin** generates reports → Analyzes violation trends by period
+1. **Teacher** logs in → Scans student QR code via camera → Reports violation with photo evidence
+2. **Discipline Officer** reviews violation → Issues disciplinary action (warning, detention, etc.)
+3. **Student** receives push notification → Views violation details and action status in their portal
+4. **Admin** generates reports → Exports to PDF/CSV → Analyzes violation trends by period
+5. **Admin** bulk imports new students via Excel → Generates ID cards with QR codes
 
 ---
 
@@ -105,6 +113,7 @@ svms/
 ├── database/           # SQL schema and seed data
 ├── includes/           # Shared components (header, footer, auth)
 ├── uploads/            # User uploads (avatars, evidence)
+├── vendor/             # Composer dependencies
 ├── index.php           # Login page
 ├── manifest.json       # PWA manifest
 └── sw.js               # Service worker
@@ -147,6 +156,6 @@ This project is for educational purposes only.
 ## Contact
 
 For questions or collaboration:
-- Email: [jf.canapati@gmail.com]
-- GitHub: [https://github.com/frncscnpt/]
-- LinkedIn: [https://www.linkedin.com/in/jf-canapati/]
+- Email: jf.canapati@gmail.com
+- GitHub: https://github.com/frncscnpt
+- LinkedIn: https://www.linkedin.com/in/jf-canapati
