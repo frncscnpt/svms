@@ -52,13 +52,18 @@ if ($isMobileRole) {
 <div class="mb-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="fw-bold mb-0" style="color: var(--primary);">Notification Center</h6>
-        <?php if ($totalNotifs > 0): ?>
-        <form method="POST">
-            <button type="submit" name="mark_all_read" class="btn btn-sm" style="background: var(--accent-bg); color: var(--accent); font-size: 12px; border-radius: 20px; padding: 4px 12px;">
-                <i class="bi bi-check2-all me-1"></i>Read All
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm" onclick="enablePushNotifications(this)" id="enablePushBtn" style="background: var(--accent); color: white; font-size: 11px; border-radius: 20px; padding: 4px 12px; display: none;">
+                <i class="bi bi-bell-fill me-1"></i>Enable Alerts
             </button>
-        </form>
-        <?php endif; ?>
+            <?php if ($totalNotifs > 0): ?>
+            <form method="POST" class="d-inline">
+                <button type="submit" name="mark_all_read" class="btn btn-sm" style="background: var(--accent-bg); color: var(--accent); font-size: 12px; border-radius: 20px; padding: 4px 12px;">
+                    <i class="bi bi-check2-all me-1"></i>Read All
+                </button>
+            </form>
+            <?php endif; ?>
+        </div>
     </div>
 
     <?php if (empty($notifications)): ?>
@@ -81,7 +86,11 @@ if ($isMobileRole) {
                         </div>
                         <p class="mb-0 text-muted" style="font-size: 12px; line-height: 1.4;"><?= sanitize($notif['message']) ?></p>
                         <?php if ($notif['link']): ?>
-                            <a href="<?= BASE_PATH . $notif['link'] ?>&mark_read=<?= $notif['id'] ?>" class="btn btn-sm mt-2" style="background: var(--accent); color: white; font-size: 11px; border-radius: 20px; padding: 3px 12px;">
+                            <?php 
+                            $separator = (strpos($notif['link'], '?') !== false) ? '&' : '?';
+                            $detailsUrl = BASE_PATH . $notif['link'] . $separator . 'mark_read=' . $notif['id'];
+                            ?>
+                            <a href="<?= $detailsUrl ?>" class="btn btn-sm mt-2" style="background: var(--accent); color: white; font-size: 11px; border-radius: 20px; padding: 3px 12px;">
                                 View Details
                             </a>
                         <?php endif; ?>
@@ -139,7 +148,11 @@ if ($isMobileRole) {
                             </div>
                             <p class="mb-2 text-secondary" style="font-size: 13px;"><?= sanitize($notif['message']) ?></p>
                             <?php if ($notif['link']): ?>
-                                <a href="<?= BASE_PATH . $notif['link'] ?>&mark_read=<?= $notif['id'] ?>" class="btn-accent" style="font-size:12px;padding:5px 14px;">View Details</a>
+                                <?php 
+                                $separator = (strpos($notif['link'], '?') !== false) ? '&' : '?';
+                                $detailsUrl = BASE_PATH . $notif['link'] . $separator . 'mark_read=' . $notif['id'];
+                                ?>
+                                <a href="<?= $detailsUrl ?>" class="btn-accent" style="font-size:12px;padding:5px 14px;">View Details</a>
                             <?php endif; ?>
                         </div>
                     </div>

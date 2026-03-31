@@ -8,6 +8,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Load Composer autoloader for web-push library
+require_once __DIR__ . '/../vendor/autoload.php';
+
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/notification_functions.php';

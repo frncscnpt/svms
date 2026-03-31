@@ -727,9 +727,9 @@ $errParam = $_GET['error'] ?? '';
 </head>
 <body>
     <!-- Mobile full-screen video background -->
-    <video class="mobile-video-bg" autoplay muted loop playsinline>
+    <!-- <video class="mobile-video-bg" autoplay muted loop playsinline>
         <source src="assets/img/bg/lsb.mp4" type="video/mp4">
-    </video>
+    </video> -->
     <div class="mobile-video-overlay"></div>
 
     <div class="login-container">
@@ -737,9 +737,9 @@ $errParam = $_GET['error'] ?? '';
         <!-- Left: Branding -->
         <div class="login-left">
             <!-- Background video -->
-            <video class="bg-video" autoplay muted loop playsinline>
+            <!-- <video class="bg-video" autoplay muted loop playsinline>
                 <source src="assets/img/bg/lsb.mp4" type="video/mp4">
-            </video>
+            </video> -->
             <!-- Color overlay -->
             <div class="bg-overlay"></div>
             <div class="brand-top">
@@ -828,7 +828,30 @@ $errParam = $_GET['error'] ?? '';
 
     </div><!-- /.login-container -->
 
+    <script src="assets/js/push-manager.js"></script>
     <script>
+        // Register service worker FIRST before anything else
+        let swRegistrationPromise = null;
+        if ('serviceWorker' in navigator) {
+            // Use relative path for service worker
+            const swPath = window.location.pathname.includes('/svms/') ? '/svms/sw.js' : '/sw.js';
+            console.log('Registering service worker at:', swPath);
+            
+            swRegistrationPromise = navigator.serviceWorker.register(swPath)
+                .then(reg => {
+                    console.log('✅ Service Worker registered successfully:', reg);
+                    return navigator.serviceWorker.ready;
+                })
+                .then(reg => {
+                    console.log('✅ Service Worker is ready:', reg);
+                    return reg;
+                })
+                .catch(err => {
+                    console.error('❌ Service Worker registration failed:', err);
+                    return null;
+                });
+        }
+
         const loginForm = document.getElementById('loginForm');
         const loginBtn  = document.getElementById('loginBtn');
         const loginAlert    = document.getElementById('loginAlert');
@@ -836,6 +859,28 @@ $errParam = $_GET['error'] ?? '';
 
         loginForm.addEventListener('submit', async function (e) {
             e.preventDefault();
+            
+            // STEP 1: Request notification permission FIRST before login
+            if ('Notification' in window && window.isSecureContext) {
+                if (Notification.permission === 'default') {
+                    // First time - show browser prompt
+                    console.log('Requesting notification permission before login...');
+                    try {
+                        const permission = await Notification.requestPermission();
+                        console.log('Notification permission:', permission);
+                    } catch (err) {
+                        console.error('Permission request error:', err);
+                    }
+                } else if (Notification.permission === 'denied') {
+                    // Blocked - show custom modal with instructions
+                    const shouldContinue = await showBlockedNotificationModal();
+                    if (!shouldContinue) {
+                        return; // Don't proceed with login
+                    }
+                }
+            }
+            
+            // STEP 2: Now proceed with login
             loginBtn.classList.add('loading');
             loginAlert.style.display = 'none';
 
@@ -848,6 +893,29 @@ $errParam = $_GET['error'] ?? '';
                 const data = await res.json();
 
                 if (data.success) {
+                    // STEP 3: After successful login, subscribe to push if permission granted
+                    if (Notification.permission === 'granted' && 'serviceWorker' in navigator && 'PushManager' in window) {
+                        console.log('Login successful, subscribing to push notifications...');
+                        try {
+                            const registration = await swRegistrationPromise;
+                            if (registration) {
+                                const subscription = await registration.pushManager.getSubscription();
+                                if (!subscription) {
+                                    console.log('Creating push subscription...');
+                                    await PushManager.subscribeUser();
+                                    console.log('✅ Push subscription saved!');
+                                } else {
+                                    console.log('Already subscribed, ensuring saved to server...');
+                                    await PushManager.sendSubscriptionToServer(subscription);
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Push subscription error:', err);
+                            // Continue to redirect even if subscription fails
+                        }
+                    }
+                    
+                    // STEP 4: Redirect to dashboard
                     window.location.href = data.redirect;
                 } else {
                     loginAlertMsg.textContent = data.error;
@@ -864,6 +932,355 @@ $errParam = $_GET['error'] ?? '';
             }
         });
 
+        function showBlockedNotificationModal() {
+            return new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(19, 1, 23, 0.9);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 99999;
+                    padding: 16px;
+                    backdrop-filter: blur(8px);
+                `;
+
+                const isMobile = window.innerWidth <= 480;
+                const padding = isMobile ? '20px 18px' : '32px 28px';
+                const iconSize = isMobile ? '56px' : '64px';
+                const iconFontSize = isMobile ? '24px' : '28px';
+                const boxPadding = isMobile ? '12px' : '16px';
+                const buttonPadding = isMobile ? '12px' : '14px';
+
+                modal.innerHTML = `
+                    <div style="
+                        background: white;
+                        border-radius: 16px;
+                        padding: ${padding};
+                        max-width: 440px;
+                        width: 100%;
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+                    ">
+                        <div style="
+                            width: ${iconSize};
+                            height: ${iconSize};
+                            background: #fef3c7;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin: 0 auto ${isMobile ? '14px' : '20px'};
+                        ">
+                            <i class="bi bi-bell-slash-fill" style="font-size: ${iconFontSize}; color: #d97706;"></i>
+                        </div>
+                        <h3 style="
+                            font-family: 'Manrope', sans-serif;
+                            font-size: ${isMobile ? '18px' : '22px'};
+                            font-weight: 800;
+                            color: #130117;
+                            margin-bottom: ${isMobile ? '8px' : '12px'};
+                            text-align: center;
+                            line-height: 1.3;
+                        ">Notifications Blocked</h3>
+                        <p style="
+                            font-size: ${isMobile ? '13px' : '14px'};
+                            color: #4c444b;
+                            line-height: 1.5;
+                            margin-bottom: ${isMobile ? '14px' : '20px'};
+                            text-align: center;
+                        ">Push notifications are currently blocked in your browser.</p>
+                        <div style="
+                            background: #f5f5f5;
+                            padding: ${boxPadding};
+                            border-radius: 10px;
+                            margin-bottom: ${isMobile ? '18px' : '24px'};
+                        ">
+                            <p style="
+                                font-size: ${isMobile ? '12px' : '13px'};
+                                font-weight: 600;
+                                color: #130117;
+                                margin-bottom: ${isMobile ? '6px' : '10px'};
+                            ">To enable notifications:</p>
+                            <ol style="
+                                font-size: ${isMobile ? '11px' : '13px'};
+                                color: #4c444b;
+                                line-height: ${isMobile ? '1.6' : '1.8'};
+                                margin: 0;
+                                padding-left: ${isMobile ? '16px' : '20px'};
+                            ">
+                                <li style="margin-bottom: ${isMobile ? '2px' : '0'};">Click the lock icon (🔒) in the address bar</li>
+                                <li style="margin-bottom: ${isMobile ? '2px' : '0'};">Find "Notifications" setting</li>
+                                <li style="margin-bottom: ${isMobile ? '2px' : '0'};">Change to "Allow"</li>
+                                <li>Reload the page and login again</li>
+                            </ol>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: ${isMobile ? '6px' : '10px'};">
+                            <button id="continueBtn" style="
+                                width: 100%;
+                                padding: ${buttonPadding};
+                                background: linear-gradient(135deg, #130117 0%, #2e1731 100%);
+                                color: white;
+                                border: none;
+                                border-radius: 10px;
+                                font-family: 'Manrope', sans-serif;
+                                font-size: ${isMobile ? '13px' : '15px'};
+                                font-weight: 700;
+                                cursor: pointer;
+                            ">Continue Without Notifications</button>
+                            <button id="cancelBtn" style="
+                                width: 100%;
+                                padding: ${isMobile ? '10px' : '12px'};
+                                background: transparent;
+                                color: #7e747c;
+                                border: none;
+                                border-radius: 10px;
+                                font-family: 'Manrope', sans-serif;
+                                font-size: ${isMobile ? '12px' : '14px'};
+                                font-weight: 600;
+                                cursor: pointer;
+                            ">Cancel Login</button>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                document.getElementById('continueBtn').addEventListener('click', () => {
+                    document.body.removeChild(modal);
+                    resolve(true);
+                });
+
+                document.getElementById('cancelBtn').addEventListener('click', () => {
+                    document.body.removeChild(modal);
+                    resolve(false);
+                });
+            });
+        }
+
+        async function handlePushNotificationPrompt(redirectUrl) {
+            // Check if push is supported
+            if (!('Notification' in window) || !window.isSecureContext) {
+                window.location.href = redirectUrl;
+                return;
+            }
+
+            try {
+                // Check current permission
+                console.log('Current notification permission:', Notification.permission);
+
+                // If already granted or denied, just redirect
+                if (Notification.permission !== 'default') {
+                    // If granted but not subscribed, try to subscribe
+                    if (Notification.permission === 'granted' && swRegistrationPromise) {
+                        console.log('Permission already granted, checking subscription...');
+                        try {
+                            const registration = await swRegistrationPromise;
+                            if (registration) {
+                                const subscription = await registration.pushManager.getSubscription();
+                                if (!subscription) {
+                                    console.log('No subscription found, subscribing...');
+                                    await PushManager.subscribeUser();
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Auto-subscribe error:', err);
+                        }
+                    }
+                    window.location.href = redirectUrl;
+                    return;
+                }
+
+                // Show custom modal first (Edge requires user interaction)
+                showNotificationModal(redirectUrl);
+            } catch (err) {
+                console.error('Push check error:', err);
+                window.location.href = redirectUrl;
+            }
+        }
+
+        function showNotificationModal(redirectUrl) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                inset: 0;
+                background: rgba(19, 1, 23, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+                padding: 20px;
+                backdrop-filter: blur(8px);
+                animation: fadeIn 0.2s ease;
+            `;
+
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    border-radius: 16px;
+                    padding: 32px 28px;
+                    max-width: 420px;
+                    width: 100%;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+                    text-align: center;
+                    animation: slideUp 0.3s ease;
+                ">
+                    <div style="
+                        width: 72px;
+                        height: 72px;
+                        background: linear-gradient(135deg, #130117 0%, #2e1731 100%);
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 0 auto 20px;
+                        box-shadow: 0 8px 24px rgba(19, 1, 23, 0.2);
+                    ">
+                        <i class="bi bi-bell-fill" style="font-size: 32px; color: white;"></i>
+                    </div>
+                    <h3 style="
+                        font-family: 'Manrope', sans-serif;
+                        font-size: 24px;
+                        font-weight: 800;
+                        color: #130117;
+                        margin-bottom: 12px;
+                        letter-spacing: -0.02em;
+                    ">Stay Updated</h3>
+                    <p style="
+                        font-size: 15px;
+                        color: #4c444b;
+                        line-height: 1.6;
+                        margin-bottom: 28px;
+                    ">Get real-time notifications for violations, disciplinary actions, and uniform passes.</p>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button id="modalEnableBtn" style="
+                            width: 100%;
+                            padding: 16px;
+                            background: linear-gradient(135deg, #130117 0%, #2e1731 100%);
+                            color: white;
+                            border: none;
+                            border-radius: 12px;
+                            font-family: 'Manrope', sans-serif;
+                            font-size: 16px;
+                            font-weight: 700;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                            box-shadow: 0 4px 16px rgba(19, 1, 23, 0.2);
+                        ">Enable Notifications</button>
+                        <button id="modalSkipBtn" style="
+                            width: 100%;
+                            padding: 14px;
+                            background: transparent;
+                            color: #7e747c;
+                            border: none;
+                            border-radius: 12px;
+                            font-family: 'Manrope', sans-serif;
+                            font-size: 14px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                        ">Skip for now</button>
+                    </div>
+                </div>
+            `;
+
+            // Add animations
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(20px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                #modalEnableBtn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(19, 1, 23, 0.3);
+                }
+                #modalSkipBtn:hover {
+                    color: #4c444b;
+                    background: #f5f5f5;
+                }
+            `;
+            document.head.appendChild(style);
+            document.body.appendChild(modal);
+
+            // Enable button - triggers browser prompt
+            document.getElementById('modalEnableBtn').addEventListener('click', async () => {
+                const btn = document.getElementById('modalEnableBtn');
+                btn.textContent = 'Please wait...';
+                btn.disabled = true;
+                
+                console.log('User clicked Enable - requesting permission...');
+                try {
+                    const permission = await Notification.requestPermission();
+                    console.log('Permission result:', permission);
+                    
+                    if (permission === 'granted' && 'serviceWorker' in navigator && 'PushManager' in window) {
+                        console.log('Permission granted! Waiting for service worker...');
+                        btn.textContent = 'Setting up...';
+                        
+                        try {
+                            // Use the pre-registered service worker promise
+                            const registration = await swRegistrationPromise;
+                            
+                            if (!registration) {
+                                throw new Error('Service Worker not available');
+                            }
+                            
+                            console.log('Service Worker ready, checking subscription...');
+                            const subscription = await registration.pushManager.getSubscription();
+                            
+                            if (!subscription) {
+                                console.log('No existing subscription, creating new one...');
+                                btn.textContent = 'Subscribing...';
+                                const success = await PushManager.subscribeUser();
+                                if (success) {
+                                    console.log('✅ Subscription successful!');
+                                    btn.textContent = 'Success!';
+                                } else {
+                                    console.error('❌ Subscription failed');
+                                    btn.textContent = 'Failed';
+                                }
+                            } else {
+                                console.log('Already subscribed, saving to server...');
+                                await PushManager.sendSubscriptionToServer(subscription);
+                                console.log('✅ Subscription saved!');
+                                btn.textContent = 'Already enabled!';
+                            }
+                        } catch (err) {
+                            console.error('Subscription error:', err);
+                            alert('Error setting up notifications: ' + err.message);
+                            btn.textContent = 'Error';
+                        }
+                    } else if (permission === 'denied') {
+                        alert('Notifications blocked. Please enable them in browser settings.');
+                    }
+                } catch (err) {
+                    console.error('Permission request error:', err);
+                    alert('Error requesting permission: ' + err.message);
+                }
+                
+                // Wait a bit before redirect so user can see the status
+                setTimeout(() => {
+                    document.body.removeChild(modal);
+                    document.head.removeChild(style);
+                    window.location.href = redirectUrl;
+                }, 1000);
+            });
+
+            // Skip button
+            document.getElementById('modalSkipBtn').addEventListener('click', () => {
+                console.log('User clicked Skip');
+                document.body.removeChild(modal);
+                document.head.removeChild(style);
+                window.location.href = redirectUrl;
+            });
+        }
+
         function togglePass() {
             const pwd  = document.getElementById('password');
             const icon = document.getElementById('eyeIcon');
@@ -874,11 +1291,6 @@ $errParam = $_GET['error'] ?? '';
                 pwd.type = 'password';
                 icon.classList.replace('bi-eye', 'bi-eye-slash');
             }
-        }
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                .catch(() => {});
         }
     </script>
 </body>

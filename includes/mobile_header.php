@@ -31,6 +31,8 @@ $isStudent   = $currentUser['role'] === 'student';
     <link href="<?= BASE_PATH ?>/assets/css/style.css?v=<?= time() ?>" rel="stylesheet">
     <link href="<?= BASE_PATH ?>/assets/css/mobile.css?v=<?= time() ?>" rel="stylesheet">
     <?php if (isset($extraCSS)) echo $extraCSS; ?>
+    <script src="<?= BASE_PATH ?>/assets/js/push-manager.js" defer></script>
+
 </head>
 <body>
 <div class="mobile-app">

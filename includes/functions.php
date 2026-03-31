@@ -268,17 +268,17 @@ function getManifestDataUri() {
     
     if (json_last_error() === JSON_ERROR_NONE && is_array($manifest)) {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        $baseUrl = $protocol . '://' . $_SERVER['HTTP_HOST'];
+        $baseUrl = $protocol . '://' . $_SERVER['HTTP_HOST'] . BASE_PATH;
         
         // Convert relative paths to absolute paths
-        if (isset($manifest['start_url'])) $manifest['start_url'] = $baseUrl . $manifest['start_url'];
-        if (isset($manifest['id'])) $manifest['id'] = $baseUrl . $manifest['id'];
-        if (isset($manifest['scope'])) $manifest['scope'] = $baseUrl . rtrim($manifest['scope'], '/') . '/';
+        if (isset($manifest['start_url'])) $manifest['start_url'] = $baseUrl . ltrim($manifest['start_url'], '/');
+        if (isset($manifest['id'])) $manifest['id'] = $baseUrl . ltrim($manifest['id'], '/');
+        if (isset($manifest['scope'])) $manifest['scope'] = $baseUrl . '/';
         
         if (isset($manifest['icons']) && is_array($manifest['icons'])) {
             foreach ($manifest['icons'] as &$icon) {
                 if (isset($icon['src']) && strpos($icon['src'], '/') === 0) {
-                    $icon['src'] = $baseUrl . $icon['src'];
+                    $icon['src'] = $baseUrl . ltrim($icon['src'], '/');
                 }
             }
         }

@@ -1,12 +1,15 @@
 <?php
 /**
  * SVMS - Notification Helper Functions
- * STANDALONE VERSION (No Composer required)
+ * Using minishlink/web-push library for proper VAPID implementation
  */
 
+use Minishlink\WebPush\WebPush;
+use Minishlink\WebPush\Subscription;
+
 // VAPID Configuration
-define('VAPID_PUBLIC_KEY', 'BLhYZmVFNN683OyNvSG3xc0q_qO1GwgZxA6ChTtucbEMwH_nISy_28bCW0ENN2YfiAqqfNKI20c0Dxy6D_KM9uY');
-define('VAPID_PRIVATE_KEY', '8tA3MhUmQEterlm58X02mLJW62vmTpC8PtV44pf4L-Y');
+define('VAPID_PUBLIC_KEY', 'BBCiSrLfOgW6yINtSFAxLRgYo2QJ73guhYbfmyMgRQHBZBcno91z78tSQdBYViffdIwsLqMXQbx8G8elKXakZQE');
+define('VAPID_PRIVATE_KEY', 'EjwcVlmvFeN8UTA_PZrMTVPqv9zmuAEF-YTV45-aZcE');
 define('VAPID_SUBJECT', 'mailto:canapatijohnfrancis@gmail.com');
 
 /**
@@ -40,21 +43,59 @@ function sendWebPushToUser($userId, $title, $message, $link = null) {
         $stmt->execute([$userId]);
         $subscriptions = $stmt->fetchAll();
         
-        if (empty($subscriptions)) return;
+        if (empty($subscriptions)) {
+            error_log("No push subscriptions found for user $userId");
+            return;
+        }
         
-        $payload = [
+        // Initialize WebPush with VAPID credentials
+        $auth = [
+            'VAPID' => [
+                'subject' => VAPID_SUBJECT,
+                'publicKey' => VAPID_PUBLIC_KEY,
+                'privateKey' => VAPID_PRIVATE_KEY,
+            ],
+        ];
+        
+        $webPush = new WebPush($auth);
+        
+        // Prepare notification payload
+        $payload = json_encode([
             'title' => $title,
             'message' => $message,
             'link' => $link ?? '/notifications.php'
-        ];
-
+        ]);
+        
+        error_log("Sending push to " . count($subscriptions) . " subscription(s) for user $userId");
+        
+        // Queue notifications for all subscriptions
         foreach ($subscriptions as $sub) {
-            // Standalone push delivery (VAPID only, no Composer)
-            $result = deliverStandalonePush($sub, $payload);
+            $subscription = Subscription::create([
+                'endpoint' => $sub['endpoint'],
+                'keys' => [
+                    'p256dh' => $sub['p256dh'],
+                    'auth' => $sub['auth']
+                ]
+            ]);
             
-            // If endpoint is gone (410 Gone or 404), remove the subscription
-            if ($result === 410 || $result === 404) {
-                $pdo->prepare("DELETE FROM push_subscriptions WHERE id = ?")->execute([$sub['id']]);
+            $webPush->queueNotification($subscription, $payload);
+        }
+        
+        // Send all queued notifications
+        foreach ($webPush->flush() as $report) {
+            $endpoint = $report->getEndpoint();
+            
+            if ($report->isSuccess()) {
+                error_log("Push notification sent successfully to: " . substr($endpoint, 0, 50) . "...");
+            } else {
+                $reason = $report->getReason();
+                error_log("Push notification failed for: " . substr($endpoint, 0, 50) . "... - Reason: $reason");
+                
+                // Remove invalid subscriptions (410 Gone or 404 Not Found)
+                if ($report->isSubscriptionExpired()) {
+                    $pdo->prepare("DELETE FROM push_subscriptions WHERE endpoint = ?")->execute([$endpoint]);
+                    error_log("Removed expired subscription: " . substr($endpoint, 0, 50) . "...");
+                }
             }
         }
     } catch (Exception $e) {
@@ -62,103 +103,8 @@ function sendWebPushToUser($userId, $title, $message, $link = null) {
     }
 }
 
-/**
- * Deliver a push notification without external libraries
- * This handles VAPID authentication only.
- */
-function deliverStandalonePush($sub, $payload) {
-    $endpoint = $sub['endpoint'];
-    $parseUrl = parse_url($endpoint);
-    $origin = $parseUrl['scheme'] . '://' . $parseUrl['host'];
-    
-    // Create VAPID Header (JWT)
-    $jwtHeader = base64UrlEncode(json_encode(['typ' => 'JWT', 'alg' => 'ES256']));
-    $jwtPayload = base64UrlEncode(json_encode([
-        'aud' => $origin,
-        'exp' => time() + 3600,
-        'sub' => VAPID_SUBJECT
-    ]));
-    
-    // --- START VAPID SIGNING (ES256) ---
-    $jwt = $jwtHeader . "." . $jwtPayload;
-    
-    // Decode VAPID private key to raw binary
-    $privateKeyBin = base64UrlDecode(VAPID_PRIVATE_KEY);
-    $publicKeyBin = base64UrlDecode(VAPID_PUBLIC_KEY);
-
-    // VAPID keys are raw bytes (static 32-byte private key). 
-    // To sign with OpenSSL, we must wrap it in a PEM header/footer if not already.
-    // However, raw VAPID ES256 keys are tricky toPEM. 
-    // Standard approach: If you don't have the PEM, you must construct the ASN.1 structure.
-    // BUT OpenSSL 3.0+ simplified this.
-    
-    // Let's use a simpler "Ping" header if ES256 is too complex for standalone 
-    // Actually, I will try to generate a valid ES256 signature.
-    $signature = '';
-    try {
-        // Convert raw private key to PEM (prime256v1 / secp256r1)
-        // This is a minimal DER sequence for a P-256 private key
-        $der = hex2bin('30770201010420' . bin2hex($privateKeyBin) . 'a00a06082a8648ce3d030107a14403420004' . bin2hex($publicKeyBin));
-        $pem = "-----BEGIN PRIVATE KEY-----\n" . chunk_split(base64_encode($der), 64) . "-----END PRIVATE KEY-----";
-        
-        $keyRes = openssl_pkey_get_private($pem);
-        if ($keyRes && openssl_sign($jwt, $derSig, $keyRes, OPENSSL_ALGO_SHA256)) {
-            // OpenSSL returns DER signature. We need raw R and S concatenated.
-            // Der format: 30 <len> 02 <lenR> <R> 02 <lenS> <S>
-            $signature = decodeDerSignature($derSig);
-        }
-    } catch (Exception $e) {
-        error_log("VAPID Sign Error: " . $e->getMessage());
-    }
-
-    $headers = [
-        'TTL: 86400',
-        'Urgency: normal',
-        'Authorization: WebPush ' . $jwt . '.' . base64UrlEncode($signature),
-        'Crypto-Key: p2=' . VAPID_PUBLIC_KEY,
-        'Content-Type: application/json'
-    ];
-
-    $ch = curl_init($endpoint);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => '', // Empty payload (SW will fetch data manually)
-        CURLOPT_HTTPHEADER => $headers,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 5,
-        CURLOPT_SSL_VERIFYPEER => false
-    ]);
-    
-    $result = curl_exec($ch);
-    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    return $status;
-}
-
 function base64UrlEncode($data) {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-}
-
-function base64UrlDecode($data) {
-    return base64_decode(strtr($data, '-_', '+/'));
-}
-
-function decodeDerSignature($der) {
-    $R = ''; $S = '';
-    $offset = 2; // Tag and Length
-    if (ord($der[$offset++]) == 0x02) {
-        $lenR = ord($der[$offset++]);
-        $R = substr($der, $offset, $lenR);
-        $offset += $lenR;
-    }
-    if (ord($der[$offset++]) == 0x02) {
-        $lenS = ord($der[$offset++]);
-        $S = substr($der, $offset, $lenS);
-    }
-    // Remove leading zero if necessary (R and S must be 32 bytes)
-    $R = ltrim($R, "\x00"); $S = ltrim($S, "\x00");
-    return str_pad($R, 32, "\x00", STR_PAD_LEFT) . str_pad($S, 32, "\x00", STR_PAD_LEFT);
 }
 
 /**

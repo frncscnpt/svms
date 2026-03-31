@@ -6,6 +6,13 @@
     <?php if (isset($extraJS)) echo $extraJS; ?>
 
     <script>
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('<?= BASE_PATH ?>/sw.js', { scope: '<?= BASE_PATH ?>/' })
+            .then(reg => console.log('Service Worker registered:', reg.scope))
+            .catch(err => console.error('Service Worker registration failed:', err));
+    }
+
     // Sidebar toggle for mobile
     const sidebar   = document.getElementById('sidebar');
     const backdrop  = document.getElementById('sidebarBackdrop');

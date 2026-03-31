@@ -6,7 +6,7 @@ const PushManager = {
     // VAPID Public Key (A real-world app would generate this)
     // For demo purposes, this is a placeholder. 
     // In production, you'd use your own VAPID public key.
-    vapidPublicKey: 'BLhYZmVFNN683OyNvSG3xc0q_qO1GwgZxA6ChTtucbEMwH_nISy_28bCW0ENN2YfiAqqfNKI20c0Dxy6D_KM9uY',
+    vapidPublicKey: 'BBCiSrLfOgW6yINtSFAxLRgYo2QJ73guhYbfmyMgRQHBZBcno91z78tSQdBYViffdIwsLqMXQbx8G8elKXakZQE',
 
     async init() {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -35,7 +35,7 @@ const PushManager = {
                 applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey)
             });
 
-            alert('Subscription successful! Saving to server...');
+            console.log('Subscription successful! Saving to server...');
             await this.sendSubscriptionToServer(sub);
             return true;
         } catch (err) {
@@ -50,25 +50,34 @@ const PushManager = {
             const key = subscription.getKey('p256dh');
             const token = subscription.getKey('auth');
 
-            const res = await fetch('/api/save_subscription.php', {
+            // Convert ArrayBuffer to base64
+            const p256dhBase64 = btoa(String.fromCharCode(...new Uint8Array(key)));
+            const authBase64 = btoa(String.fromCharCode(...new Uint8Array(token)));
+
+            const basePath = document.querySelector('script[src*="push-manager"]')?.src.split('/assets')[0] || '';
+            
+            const res = await fetch(basePath + '/api/save_subscription.php', {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     endpoint: subscription.endpoint,
                     keys: {
-                        p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(key))),
-                        auth: btoa(String.fromCharCode.apply(null, new Uint8Array(token)))
+                        p256dh: p256dhBase64,
+                        auth: authBase64
                     }
                 })
             });
 
             const data = await res.json();
             if (data.success) {
-                alert('Push Token saved successfully!');
+                console.log('Push Token saved successfully!');
             } else {
-                alert('Server Error: ' + (data.message || 'Unknown error'));
+                console.error('Server Error:', data.message || 'Unknown error');
             }
         } catch (err) {
-            alert('Fetch Error: ' + err.message);
+            console.error('Fetch Error:', err.message);
         }
     },
 
