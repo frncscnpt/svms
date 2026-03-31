@@ -8,11 +8,7 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $breadcrumbs = ['Dashboard' => null];
 
-if (IS_MOBILE) {
-    require_once __DIR__ . '/../includes/mobile_header.php';
-} else {
-    require_once __DIR__ . '/../includes/header.php';
-}
+require_once __DIR__ . '/../includes/header.php';
 
 requireRole('student');
 
@@ -61,8 +57,6 @@ $pdo->exec("UPDATE uniform_passes SET status = 'expired' WHERE status = 'active'
 $passStmt = $pdo->prepare("SELECT up.*, u.full_name AS issued_by_name FROM uniform_passes up JOIN users u ON up.issued_by = u.id WHERE up.student_id = ? AND up.status = 'active' AND up.valid_date = CURDATE() ORDER BY up.created_at DESC LIMIT 1");
 $passStmt->execute([$studentId]);
 $activePass = $passStmt->fetch();
-
-if (IS_MOBILE):
 ?>
 
 <!-- Greeting -->
@@ -166,174 +160,4 @@ if (IS_MOBILE):
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../includes/mobile_footer.php';
-else: // DESKTOP ?>
-
-<!-- Stat Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-purple">
-            <div class="stat-header">
-                <span class="stat-label">Total Violations</span>
-                <div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
-            </div>
-            <div class="stat-value"><?= $totalViolations ?></div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-orange">
-            <div class="stat-header">
-                <span class="stat-label">Pending Actions</span>
-                <div class="stat-icon"><i class="bi bi-hammer"></i></div>
-            </div>
-            <div class="stat-value"><?= $pendingActions ?></div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-green">
-            <div class="stat-header">
-                <span class="stat-label">Grade Level</span>
-                <div class="stat-icon"><i class="bi bi-mortarboard-fill"></i></div>
-            </div>
-            <div class="stat-value" style="font-size:20px;"><?= sanitize($student['grade_level'] ?? '—') ?></div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card stat-blue">
-            <div class="stat-header">
-                <span class="stat-label">Section</span>
-                <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-            </div>
-            <div class="stat-value" style="font-size:20px;"><?= sanitize($student['section'] ?? '—') ?></div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4">
-    <!-- Recent Violations -->
-    <div class="col-lg-8">
-        <div class="card-panel">
-            <div class="panel-header">
-                <h5 class="panel-title"><i class="bi bi-clock-history"></i> Recent Violations</h5>
-                <a href="<?= BASE_PATH ?>/student/violations.php" class="btn-outline-custom" style="font-size:12px;padding:5px 14px;">View All</a>
-            </div>
-            <?php if (empty($recent)): ?>
-            <div class="panel-body text-center py-5">
-                <i class="bi bi-shield-check" style="font-size:48px;color:#ede9ee;"></i>
-                <p style="color:var(--text-muted);margin-top:12px;font-size:14px;">No violations on record. Keep it up!</p>
-            </div>
-            <?php else: ?>
-            <div class="data-table-wrapper">
-                <table class="data-table">
-                    <thead><tr>
-                        <th>Violation</th>
-                        <th>Severity</th>
-                        <th>Reported By</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                    </tr></thead>
-                    <tbody>
-                    <?php foreach ($recent as $r): ?>
-                    <tr>
-                        <td><?= sanitize($r['violation_name']) ?></td>
-                        <td><?= severityBadge($r['severity']) ?></td>
-                        <td><?= sanitize($r['reporter']) ?></td>
-                        <td><?= formatDateTime($r['date_occurred'], 'M d, Y') ?></td>
-                        <td><?= statusBadge($r['status']) ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- Uniform Pass Widget -->
-    <div class="col-lg-4">
-        <?php if ($activePass): ?>
-        <div class="card-panel" style="overflow:hidden;">
-            <!-- Header -->
-            <div style="background:linear-gradient(135deg,#065f46,#059669);padding:18px 20px;color:white;display:flex;align-items:center;gap:12px;">
-                <div style="width:38px;height:38px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="bi bi-check-circle-fill" style="font-size:18px;"></i>
-                </div>
-                <div>
-                    <div style="font-weight:700;font-size:14px;">Uniform Pass Active</div>
-                    <div style="font-size:11px;color:rgba(255,255,255,0.7);">Valid today</div>
-                </div>
-                <span class="ms-auto" style="background:rgba(255,255,255,0.2);color:white;font-size:10px;font-weight:700;padding:4px 10px;border-radius:99px;">ACTIVE</span>
-            </div>
-            <!-- QR + Details -->
-            <div style="display:flex;">
-                <!-- QR -->
-                <div style="flex:0 0 auto;padding:16px;border-right:1px solid #ede9ee;background:#f8fdf8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
-                    <div id="dashPassQR" style="display:inline-block;padding:8px;background:white;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);"></div>
-                    <p style="font-size:10px;color:var(--text-muted);margin:0;text-align:center;line-height:1.4;">Show to teacher</p>
-                </div>
-                <!-- Details -->
-                <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
-                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom" style="font-size:12px;">
-                        <span class="text-muted">Reason</span>
-                        <strong style="max-width:120px;text-align:right;font-size:11px;"><?= sanitize($activePass['reason']) ?></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom" style="font-size:12px;">
-                        <span class="text-muted">Issued By</span>
-                        <strong style="font-size:11px;"><?= sanitize($activePass['issued_by_name']) ?></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom" style="font-size:12px;">
-                        <span class="text-muted">Issued</span>
-                        <strong style="font-size:11px;"><?= timeAgo($activePass['created_at']) ?></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom" style="font-size:12px;">
-                        <span class="text-muted">Valid Until</span>
-                        <strong style="font-size:11px;"><?= formatDate($activePass['valid_date']) ?></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center py-2 px-3" style="font-size:12px;">
-                        <span class="text-muted">Pass Code</span>
-                        <code style="font-size:9px;color:var(--primary);"><?= sanitize($activePass['pass_code']) ?></code>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php else: ?>
-        <div class="card-panel">
-            <div class="panel-body text-center" style="padding:32px 24px;">
-                <div style="width:56px;height:56px;background:#f7f2f8;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
-                    <i class="bi bi-card-checklist" style="font-size:26px;color:#ede9ee;"></i>
-                </div>
-                <div style="font-weight:700;font-size:15px;color:var(--primary);margin-bottom:6px;">No Active Pass</div>
-                <div style="font-size:12px;color:var(--text-muted);">You don't have a uniform pass for today.</div>
-            </div>
-        </div>
-        <?php endif; ?>
-
-        <?php if (!empty($activeActions)): $aa = $activeActions[0]; ?>
-        <div class="card-panel mt-3" style="background:#f7f2f8;">
-            <div class="panel-header"><h5 class="panel-title"><i class="bi bi-hammer"></i> Active Action</h5></div>
-            <div class="panel-body">
-                <div style="font-weight:700;font-size:14px;color:#130117;"><?= ucwords(str_replace('_',' ',$aa['action_type'])) ?></div>
-                <div style="font-size:12px;color:#7e747c;margin-bottom:8px;"><?= sanitize($aa['violation_name']) ?></div>
-                <?= statusBadge($aa['status']) ?>
-            </div>
-        </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<?php
-if ($activePass) {
-    echo '<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script>
-    new QRCode(document.getElementById("dashPassQR"), {
-        text: ' . json_encode($activePass['pass_code']) . ',
-        width: 120,
-        height: 120,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-    });
-    </script>';
-}
-require_once __DIR__ . '/../includes/footer.php';
-endif; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

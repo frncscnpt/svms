@@ -1,6 +1,8 @@
 <?php
 /**
- * SVMS - Desktop Header (Sidebar Layout)
+ * SVMS - Unified Header (Responsive Layout)
+ * Shows mobile top bar + bottom nav on mobile
+ * Shows desktop sidebar on desktop
  */
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/functions.php';
@@ -9,25 +11,53 @@ requireLogin();
 $currentUser = getCurrentUser();
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $currentDir = basename(dirname($_SERVER['PHP_SELF']));
+$isTeacher = $currentUser['role'] === 'teacher';
+$isStudent = $currentUser['role'] === 'student';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#2e1731">
-    <title><?= $pageTitle ?? 'Dashboard' ?> - SVMS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#fdf8fd">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title><?= $pageTitle ?? 'SVMS' ?></title>
     <link rel="manifest" href="<?= getManifestDataUri() ?>">
     <link rel="icon" href="<?= BASE_PATH ?>/assets/img/logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="<?= BASE_PATH ?>/assets/img/logo.png">
     <link rel="preload" href="<?= BASE_PATH ?>/assets/font/Chillax-Variable.ttf" as="font" type="font/ttf" crossorigin>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="<?= BASE_PATH ?>/assets/css/style.css?v=<?= time() ?>" rel="stylesheet">
+    <link href="<?= BASE_PATH ?>/assets/css/mobile.css?v=<?= time() ?>" rel="stylesheet">
     <?php if (isset($extraCSS)) echo $extraCSS; ?>
     <script src="<?= BASE_PATH ?>/assets/js/push-manager.js" defer></script>
 </head>
 <body>
-    <!-- Sidebar -->
+<div class="mobile-app">
+
+    <!-- Mobile Top Bar (hidden on desktop) -->
+    <header class="m-topbar">
+        <div class="m-topbar-brand">
+            <div class="m-topbar-logo-wrap">
+                <img src="<?= BASE_PATH ?>/assets/img/logo.png" alt="SVMS" class="m-topbar-logo">
+            </div>
+            <span class="m-topbar-title">Lyceum SVMS</span>
+        </div>
+        <div class="m-topbar-actions">
+            <?php $unreadCount = getUnreadNotificationCount($_SESSION['user_id']); ?>
+            <a href="<?= BASE_PATH ?>/notifications.php" class="m-topbar-btn position-relative">
+                <i class="bi bi-bell"></i>
+                <?php if ($unreadCount > 0): ?>
+                <span class="m-notif-dot"></span>
+                <?php endif; ?>
+            </a>
+        </div>
+    </header>
+
+    <!-- Desktop Sidebar (hidden on mobile) -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <div class="brand-icon">
@@ -102,36 +132,32 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
             <div class="nav-section">
                 <div class="nav-section-title">Main</div>
                 <a href="<?= BASE_PATH ?>/teacher/index.php" class="nav-link-item <?= $currentPage === 'index' && $currentDir === 'teacher' ? 'active' : '' ?>">
-                    <i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span>
+                    <i class="bi bi-house-fill"></i> <span>Home</span>
                 </a>
                 <a href="<?= BASE_PATH ?>/teacher/scan.php" class="nav-link-item <?= $currentPage === 'scan' ? 'active' : '' ?>">
-                    <i class="bi bi-qr-code-scan"></i> <span>Scan QR</span>
+                    <i class="bi bi-qr-code-scan"></i> <span>Scan</span>
                 </a>
-                <a href="<?= BASE_PATH ?>/teacher/report.php" class="nav-link-item <?= $currentPage === 'report' ? 'active' : '' ?>">
-                    <i class="bi bi-plus-circle-fill"></i> <span>File Report</span>
-                </a>
-                <a href="<?= BASE_PATH ?>/teacher/my_reports.php" class="nav-link-item <?= $currentPage === 'my_reports' ? 'active' : '' ?>">
-                    <i class="bi bi-file-earmark-text-fill"></i> <span>My Reports</span>
+                <a href="<?= BASE_PATH ?>/teacher/profile.php" class="nav-link-item <?= $currentPage === 'profile' ? 'active' : '' ?>">
+                    <i class="bi bi-person-fill"></i> <span>Profile</span>
                 </a>
             </div>
             <?php elseif ($currentUser['role'] === 'student'): ?>
             <div class="nav-section">
                 <div class="nav-section-title">Main</div>
                 <a href="<?= BASE_PATH ?>/student/index.php" class="nav-link-item <?= $currentPage === 'index' && $currentDir === 'student' ? 'active' : '' ?>">
-                    <i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span>
+                    <i class="bi bi-house-fill"></i> <span>Home</span>
                 </a>
                 <a href="<?= BASE_PATH ?>/student/violations.php" class="nav-link-item <?= $currentPage === 'violations' ? 'active' : '' ?>">
-                    <i class="bi bi-exclamation-triangle-fill"></i> <span>My Violations</span>
+                    <i class="bi bi-exclamation-triangle-fill"></i> <span>Violations</span>
+                </a>
+                <a href="<?= BASE_PATH ?>/student/uniform_pass.php" class="nav-link-item <?= $currentPage === 'uniform_pass' ? 'active' : '' ?>">
+                    <i class="bi bi-card-checklist"></i> <span>Pass</span>
+                </a>
+                <a href="<?= BASE_PATH ?>/student/profile.php" class="nav-link-item <?= $currentPage === 'profile' ? 'active' : '' ?>">
+                    <i class="bi bi-person-fill"></i> <span>Profile</span>
                 </a>
             </div>
             <?php endif; ?>
-
-            <div class="nav-section">
-                <div class="nav-section-title">Account</div>
-                <a href="<?= BASE_PATH ?>/settings.php" class="nav-link-item <?= $currentPage === 'settings' ? 'active' : '' ?>">
-                    <i class="bi bi-person-circle"></i> <span>My Profile</span>
-                </a>
-            </div>
         </nav>
 
         <div class="sidebar-user">
@@ -145,8 +171,9 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
     <!-- Sidebar backdrop (mobile) -->
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-    <!-- Main Content -->
+    <!-- Main Content Wrapper -->
     <main class="main-content">
+        <!-- Desktop Topbar (hidden on mobile) -->
         <div class="topbar">
             <div class="topbar-left">
                 <button class="topbar-btn d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
@@ -219,11 +246,26 @@ $currentDir = basename(dirname($_SERVER['PHP_SELF']));
                     </div>
                 </div>
                 <div class="ms-1">
-                    <a href="<?= BASE_PATH ?>/settings.php" style="text-decoration:none; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <?php 
+                    $profileLink = BASE_PATH;
+                    if ($currentUser['role'] === 'teacher') {
+                        $profileLink .= '/teacher/profile.php';
+                    } elseif ($currentUser['role'] === 'student') {
+                        $profileLink .= '/student/profile.php';
+                    } elseif ($currentUser['role'] === 'admin') {
+                        $profileLink .= '/admin/dashboard.php';
+                    } elseif ($currentUser['role'] === 'discipline_officer') {
+                        $profileLink .= '/discipline/dashboard.php';
+                    }
+                    ?>
+                    <a href="<?= $profileLink ?>" style="text-decoration:none; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                         <?= getAvatarHtml($_SESSION['avatar'] ?? null, $_SESSION['full_name'], 'profile-avatar', 'width:38px!important;height:38px!important;font-size:14px!important;flex-shrink:0;', null) ?>
                     </a>
                 </div>
             </div>
         </div>
+
+        <!-- Content Area -->
         <div class="content-wrapper">
-            <?php renderFlash(); ?>
+            <div class="mobile-content">
+                <?php renderFlash(); ?>

@@ -92,18 +92,13 @@ if (!$student) {
 }
 
 require_once __DIR__ . '/../includes/layout.php';
-if (IS_MOBILE) {
-    require_once __DIR__ . '/../includes/mobile_header.php';
-} else {
-    require_once __DIR__ . '/../includes/header.php';
-}
+require_once __DIR__ . '/../includes/header.php';
 
 $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='active' ORDER BY severity DESC, name")->fetchAll();
 ?>
 
-<div class="<?= IS_MOBILE ? '' : 'row justify-content-center' ?>">
-<div class="<?= IS_MOBILE ? '' : 'col-lg-7' ?>">
-<form method="POST" enctype="multipart/form-data" class="<?= IS_MOBILE ? 'm-form' : '' ?>">
+<div class="report-form-container">
+<form method="POST" enctype="multipart/form-data" class="m-form">
 
     <!-- Student Selection -->
     <div class="card-panel mb-3">
@@ -144,15 +139,11 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
             </div>
             <div class="form-group">
                 <label class="form-label">Date & Time</label>
-                <?php if (IS_MOBILE): ?>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="datetime-input-group">
                     <input type="date" class="form-control" id="date_part" value="<?= date('Y-m-d') ?>">
                     <input type="time" class="form-control" id="time_part" value="<?= date('H:i') ?>">
                 </div>
                 <input type="hidden" name="date_occurred" id="date_occurred_combined">
-                <?php else: ?>
-                <input type="datetime-local" class="form-control" name="date_occurred" value="<?= date('Y-m-d\TH:i') ?>">
-                <?php endif; ?>
             </div>
             <div class="form-group mb-0">
                 <label class="form-label">Evidence (Optional)</label>
@@ -162,11 +153,10 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
         </div>
     </div>
 
-    <button type="submit" class="<?= IS_MOBILE ? 'm-submit-btn' : 'btn-primary-custom w-100' ?>" style="padding:13px;font-size:15px;justify-content:center;margin-bottom:20px;">
+    <button type="submit" class="m-submit-btn" style="padding:13px;font-size:15px;justify-content:center;margin-bottom:20px;">
         <i class="bi bi-send-fill me-1"></i> Submit Report
     </button>
 </form>
-<?php if (IS_MOBILE): ?>
 <script>
     // Combine date + time into hidden field before submit
     document.querySelector('form').addEventListener('submit', function() {
@@ -177,13 +167,6 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
         }
     });
 </script>
-<?php endif; ?>
-</div><?= IS_MOBILE ? '' : '</div>' ?>
+</div>
 
-<?php
-if (IS_MOBILE) {
-    require_once __DIR__ . '/../includes/mobile_footer.php';
-} else {
-    require_once __DIR__ . '/../includes/footer.php';
-}
-?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

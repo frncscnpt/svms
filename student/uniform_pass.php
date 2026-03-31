@@ -6,15 +6,9 @@ $pageTitle = 'Uniform Pass';
 
 require_once __DIR__ . '/../includes/layout.php';
 
-// Desktop users see the pass on the dashboard — redirect them there
-if (!IS_MOBILE) {
-    header('Location: ' . BASE_PATH . '/student/index.php');
-    exit;
-}
-
 $breadcrumbs = ['Dashboard' => BASE_PATH.'/student/index.php', 'Uniform Pass' => null];
 
-require_once __DIR__ . '/../includes/mobile_header.php';
+require_once __DIR__ . '/../includes/header.php';
 
 requireRole('student');
 
@@ -145,5 +139,5 @@ if ($activePass) {
     });
     </script>';
 }
-require_once __DIR__ . '/../includes/mobile_footer.php';
+require_once __DIR__ . '/../includes/footer.php';
 ?>

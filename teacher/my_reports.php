@@ -8,11 +8,7 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $breadcrumbs = ['Dashboard' => BASE_PATH.'/teacher/index.php', 'My Reports' => null];
 
-if (IS_MOBILE) {
-    require_once __DIR__ . '/../includes/mobile_header.php';
-} else {
-    require_once __DIR__ . '/../includes/header.php';
-}
+require_once __DIR__ . '/../includes/header.php';
 
 requireRole('teacher');
 
@@ -41,8 +37,6 @@ $reports_stmt->execute($params);
 $reports = $reports_stmt->fetchAll();
 
 $periods = $pdo->query("SELECT id, name FROM academic_periods ORDER BY start_date DESC")->fetchAll();
-
-if (IS_MOBILE):
 ?>
 
 <!-- Section Header -->
@@ -97,75 +91,4 @@ if (IS_MOBILE):
 </div>
 <?php endif; ?>
 
-<?php require_once __DIR__ . '/../includes/mobile_footer.php';
-else: // DESKTOP ?>
-
-<div class="card-panel">
-    <div class="panel-header">
-        <h5 class="panel-title"><i class="bi bi-file-earmark-text-fill"></i> My Reports</h5>
-        <a href="<?= BASE_PATH ?>/teacher/scan.php" class="btn-primary-custom" style="font-size:12px;padding:7px 16px;">
-            <i class="bi bi-plus-lg"></i> New Report
-        </a>
-    </div>
-
-    <div class="panel-body border-bottom bg-light py-2">
-        <form method="GET" class="d-flex align-items-center gap-2 px-1">
-            <span class="text-muted small fw-bold">Academic Period:</span>
-            <select name="period_id" class="form-select form-select-sm" style="width: 200px;" onchange="this.form.submit()">
-                <option value="">All Periods</option>
-                <?php foreach ($periods as $p): ?>
-                <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <?php if ($period_id): ?>
-                <a href="<?= BASE_PATH ?>/teacher/my_reports.php" class="btn btn-link btn-sm text-secondary text-decoration-none">Clear</a>
-            <?php endif; ?>
-        </form>
-    </div>
-
-    <?php if (empty($reports)): ?>
-    <div class="panel-body text-center py-5">
-        <i class="bi bi-file-text" style="font-size:52px;color:#ede9ee;"></i>
-        <p style="color:var(--text-muted);margin-top:14px;font-size:14px;">No reports submitted yet.</p>
-        <a href="<?= BASE_PATH ?>/teacher/scan.php" class="btn-primary-custom mt-2"><i class="bi bi-qr-code-scan"></i> Scan & Report</a>
-    </div>
-    <?php else: ?>
-    <div class="data-table-wrapper">
-        <table class="data-table">
-            <thead><tr>
-                <th>Student</th>
-                <th>Violation</th>
-                <th>Grade</th>
-                <th>Severity</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr></thead>
-            <tbody>
-            <?php foreach ($reports as $r): ?>
-            <tr>
-                <td>
-                    <div class="user-cell">
-                                <?= getAvatarHtml($r['photo'] ?? null, $r['first_name'] . ' ' . $r['last_name'], 'user-avatar') ?>
-                        <div class="user-info">
-                            <div class="name"><?= sanitize($r['first_name'].' '.$r['last_name']) ?></div>
-                            <div class="sub"><?= sanitize($r['student_number']) ?></div>
-                        </div>
-                    </div>
-                </td>
-                <td><?= sanitize($r['violation_name']) ?></td>
-                <td><?= sanitize($r['grade_level']) ?></td>
-                <td><?= severityBadge($r['severity']) ?></td>
-                <td><?= formatDateTime($r['date_occurred'], 'M d, Y') ?></td>
-                <td><?= statusBadge($r['status']) ?></td>
-                <td><?= $r['action_taken'] ? actionBadge($r['action_taken']) : '<span style="color:var(--text-muted);font-size:12px;">—</span>' ?></td>
-            </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <?php endif; ?>
-</div>
-
-<?php require_once __DIR__ . '/../includes/footer.php';
-endif; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

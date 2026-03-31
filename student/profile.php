@@ -8,15 +8,37 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $breadcrumbs = ['Dashboard' => BASE_PATH.'/student/index.php', 'My Profile' => null];
 
-if (IS_MOBILE) {
-    require_once __DIR__ . '/../includes/mobile_header.php';
-} else {
-    require_once __DIR__ . '/../includes/header.php';
-}
+require_once __DIR__ . '/../includes/header.php';
 
 requireRole('student');
 
 $pdo = getDBConnection();
+
+// Handle password change
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'change_password') {
+    $current  = $_POST['current_password'] ?? '';
+    $new      = $_POST['new_password'] ?? '';
+    $confirm  = $_POST['confirm_password'] ?? '';
+
+    $stmt = $pdo->prepare("SELECT password FROM users WHERE id=?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $hash = $stmt->fetchColumn();
+
+    if (!password_verify($current, $hash)) {
+        setFlash('danger', 'Current password is incorrect.');
+    } elseif (strlen($new) < 6) {
+        setFlash('danger', 'New password must be at least 6 characters.');
+    } elseif ($new !== $confirm) {
+        setFlash('danger', 'Passwords do not match.');
+    } else {
+        $pdo->prepare("UPDATE users SET password=? WHERE id=?")
+            ->execute([password_hash($new, PASSWORD_DEFAULT), $_SESSION['user_id']]);
+        setFlash('success', 'Password updated successfully.');
+    }
+    header('Location: ' . BASE_PATH . '/student/profile.php');
+    exit;
+}
+
 $studentId = $_SESSION['student_id'];
 
 $student = $pdo->prepare("SELECT * FROM students WHERE id=?");
@@ -39,8 +61,6 @@ $profileFields = [
     'Guardian'         => sanitize($student['guardian_name'] ?? 'N/A'),
     'Guardian Contact' => sanitize($student['guardian_contact'] ?? 'N/A'),
 ];
-
-if (IS_MOBILE):
 ?>
 
 <!-- Profile Header -->
@@ -98,7 +118,7 @@ if (IS_MOBILE):
         <span class="m-section-title">Change Password</span>
     </div>
     <div class="m-card" style="padding:16px 18px;">
-        <form method="POST" action="<?= BASE_PATH ?>/settings.php">
+        <form method="POST" action="">
             <input type="hidden" name="action" value="change_password">
             <div class="mb-3">
                 <label style="font-size:12px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:6px;">Current Password</label>
@@ -169,108 +189,5 @@ document.getElementById("logoutModal").addEventListener("click", function(e) {
     if (e.target === this) this.style.display = "none";
 });
 </script>';
-require_once __DIR__ . '/../includes/mobile_footer.php';
-
-else: // DESKTOP
-?>
-
-<div class="row g-4">
-    <!-- Left: Avatar + Stats -->
-    <div class="col-lg-4">
-        <div class="card-panel">
-            <div class="panel-body text-center" style="padding:32px 24px;">
-                <label for="avatarUpload" style="cursor:pointer;display:inline-block;position:relative;">
-                    <?= getAvatarHtml($student['photo'], $student['first_name'].' '.$student['last_name'], 'user-avatar', 'width:80px;height:80px;font-size:28px;margin:0 auto 12px;') ?>
-                    <div style="position:absolute;bottom:12px;right:-4px;background:#fff;border:2px solid var(--primary);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--primary);">
-                        <i class="bi bi-camera-fill"></i>
-                    </div>
-                </label>
-                <input type="file" id="avatarUpload" accept="image/png,image/jpeg,image/webp" style="display:none;">
-                <div style="font-weight:700;font-size:18px;color:var(--primary);margin-top:4px;"><?= sanitize($student['first_name'].' '.$student['last_name']) ?></div>
-                <div style="font-size:13px;color:var(--text-muted);"><?= sanitize($student['student_number']) ?></div>
-                <div class="row g-2 mt-3 pt-3" style="border-top:1px solid #f0eff4;">
-                    <div class="col-12 text-center">
-                        <div style="font-size:28px;font-weight:700;color:<?= $violationCount > 0 ? 'var(--danger)' : 'var(--success)' ?>;"><?= $violationCount ?></div>
-                        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Total Violations</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <?php if ($qrData): ?>
-        <div class="card-panel mt-3">
-            <div class="panel-header"><h5 class="panel-title"><i class="bi bi-qr-code"></i> My QR Code</h5></div>
-            <div class="panel-body text-center">
-                <div id="studentQR" style="display:inline-block;"></div>
-                <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">Show this to your teacher for quick identification</p>
-            </div>
-        </div>
-        <?php endif; ?>
-    </div>
-
-    <!-- Right: Info -->
-    <div class="col-lg-8">
-        <div class="card-panel mb-4">
-            <div class="panel-header"><h5 class="panel-title"><i class="bi bi-person-fill"></i> Personal Information</h5></div>
-            <div class="panel-body">
-                <div class="row g-3">
-                    <?php foreach ($profileFields as $label => $val): ?>
-                    <div class="col-sm-6">
-                        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;"><?= $label ?></div>
-                        <div style="font-size:14px;font-weight:500;color:var(--text-primary);"><?= $val ?></div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </div>
-
-        <!-- Change Password -->
-        <div class="card-panel">
-            <div class="panel-header"><h5 class="panel-title"><i class="bi bi-shield-lock-fill"></i> Change Password</h5></div>
-            <div class="panel-body">
-                <form method="POST" action="<?= BASE_PATH ?>/settings.php">
-                    <input type="hidden" name="action" value="change_password">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label" style="font-size:13px;font-weight:600;color:var(--text-muted);">Current Password</label>
-                            <input type="password" name="current_password" class="form-control" required placeholder="Enter current password">
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="form-label" style="font-size:13px;font-weight:600;color:var(--text-muted);">New Password</label>
-                            <input type="password" name="new_password" class="form-control" required placeholder="Min. 6 characters">
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="form-label" style="font-size:13px;font-weight:600;color:var(--text-muted);">Confirm Password</label>
-                            <input type="password" name="confirm_password" class="form-control" required placeholder="Repeat new password">
-                        </div>
-                        <div class="col-12">
-                            <button type="submit" class="btn-primary-custom" style="padding:10px 24px;">
-                                <i class="bi bi-check-lg"></i> Update Password
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<?php
-$extraJS = '';
-if ($qrData) {
-    $extraJS .= '<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script>new QRCode(document.getElementById("studentQR"),{text:"'.$qrData.'",width:160,height:160,colorDark:"#2e1731",colorLight:"#ffffff"});</script>';
-}
-$extraJS .= '
-<script>
-document.getElementById("avatarUpload").addEventListener("change", function() {
-    if (!this.files || !this.files[0]) return;
-    const formData = new FormData();
-    formData.append("avatar", this.files[0]);
-    fetch("'.BASE_PATH.'/api/upload_avatar.php", { method:"POST", body:formData })
-        .then(r => r.json())
-        .then(data => { if (data.success) window.location.reload(); else alert(data.message || "Upload failed"); });
-});
-</script>';
 require_once __DIR__ . '/../includes/footer.php';
-endif; ?>
+?>

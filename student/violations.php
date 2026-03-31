@@ -8,11 +8,7 @@ require_once __DIR__ . '/../includes/layout.php';
 
 $breadcrumbs = ['Dashboard' => BASE_PATH.'/student/index.php', 'My Violations' => null];
 
-if (IS_MOBILE) {
-    require_once __DIR__ . '/../includes/mobile_header.php';
-} else {
-    require_once __DIR__ . '/../includes/header.php';
-}
+require_once __DIR__ . '/../includes/header.php';
 
 requireRole('student');
 
@@ -30,8 +26,6 @@ $violations = $pdo->prepare("
 ");
 $violations->execute([$studentId]);
 $violations = $violations->fetchAll();
-
-if (IS_MOBILE):
 ?>
 
 <!-- Section Header -->
@@ -79,57 +73,4 @@ if (IS_MOBILE):
 </div>
 <?php endif; ?>
 
-<?php require_once __DIR__ . '/../includes/mobile_footer.php';
-else: // DESKTOP ?>
-
-<div class="card-panel">
-    <div class="panel-header">
-        <h5 class="panel-title"><i class="bi bi-exclamation-triangle-fill"></i> My Violations</h5>
-        <span style="font-size:13px;color:var(--text-muted);"><?= count($violations) ?> record<?= count($violations) !== 1 ? 's' : '' ?></span>
-    </div>
-    <?php if (empty($violations)): ?>
-    <div class="panel-body text-center py-5">
-        <i class="bi bi-shield-check" style="font-size:52px;color:#ede9ee;"></i>
-        <p style="color:var(--text-muted);margin-top:14px;font-size:14px;">No violations on record. Keep it up!</p>
-    </div>
-    <?php else: ?>
-    <div class="data-table-wrapper">
-        <table class="data-table">
-            <thead><tr>
-                <th>Violation</th>
-                <th>Severity</th>
-                <th>Location</th>
-                <th>Reported By</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr></thead>
-            <tbody>
-            <?php foreach ($violations as $v): ?>
-            <tr>
-                <td><?= sanitize($v['violation_name']) ?></td>
-                <td><?= severityBadge($v['severity']) ?></td>
-                <td><?= sanitize($v['location'] ?? '—') ?></td>
-                <td><?= sanitize($v['reporter']) ?></td>
-                <td><?= formatDateTime($v['date_occurred'], 'M d, Y') ?></td>
-                <td><?= statusBadge($v['status']) ?></td>
-                <td>
-                    <?php if ($v['actions_data']): ?>
-                        <?php foreach (explode(';;', $v['actions_data']) as $ad):
-                            $parts = explode('|', $ad);
-                            if (count($parts) === 2) echo actionBadge($parts[0]);
-                        endforeach; ?>
-                    <?php else: ?>
-                        <span style="color:var(--text-muted);font-size:12px;">—</span>
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <?php endif; ?>
-</div>
-
-<?php require_once __DIR__ . '/../includes/footer.php';
-endif; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

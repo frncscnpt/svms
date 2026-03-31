@@ -5,10 +5,6 @@ uploads/
 # Environment / config
 config/database.php
 
-# Composer
-vendor/
-composer.phar
-
 # OS
 .DS_Store
 Thumbs.db

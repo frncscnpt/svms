@@ -528,6 +528,13 @@ $errParam = $_GET['error'] ?? '';
 
         /* ── Responsive ── */
         @media (max-width: 768px) {
+            html, body {
+                overflow-x: hidden;
+                overflow-y: auto;
+                width: 100%;
+                max-width: 100vw;
+            }
+            
             body {
                 padding: 0;
                 align-items: stretch;
@@ -541,6 +548,8 @@ $errParam = $_GET['error'] ?? '';
                 flex-direction: column;
                 flex: 1;
                 min-height: 100dvh;
+                max-width: 100vw;
+                width: 100%;
                 border-radius: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
@@ -551,10 +560,11 @@ $errParam = $_GET['error'] ?? '';
                 align-items: center;
                 justify-content: center;
                 gap: 24px;
-                padding: 48px 0 32px;
+                padding: 48px 20px 32px;
                 animation: none !important;
                 transform: none !important;
-                overflow: visible;
+                overflow-x: hidden;
+                overflow-y: auto;
             }
 
             /* Ensure form-wrap children are visible without animation delay */
@@ -572,7 +582,8 @@ $errParam = $_GET['error'] ?? '';
             .login-left {
                 flex: none;
                 width: 100%;
-                padding: 0 24px;
+                max-width: 100%;
+                padding: 0 20px;
                 min-height: auto;
                 background: transparent;
                 overflow: visible;
@@ -620,7 +631,8 @@ $errParam = $_GET['error'] ?? '';
             .login-right {
                 flex: none;
                 width: 100%;
-                padding: 0 24px;
+                max-width: 100%;
+                padding: 0 20px;
                 border: none;
                 background: transparent !important;
                 justify-content: center;
