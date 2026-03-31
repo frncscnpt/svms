@@ -137,9 +137,10 @@ This project is for educational purposes only.
 - Add data visualization dashboard with charts
 - Integrate biometric authentication
 - Mobile app version (Flutter/React Native)
-- Export reports to PDF format
 - Multi-language support (English/Filipino)
 - Parent portal for violation monitoring
+- Automated email notifications for violations
+- Integration with school management systems
 
 ---
 
