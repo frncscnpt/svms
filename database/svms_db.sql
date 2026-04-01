@@ -417,7 +417,8 @@ INSERT INTO violations (student_id, academic_period_id, violation_type_id, repor
 (8, 2, 1, 9, 'Arrived 15 minutes late without valid reason', 'Room 308', '2026-03-31 07:45:00', 'pending');
 
 -- Disciplinary Actions (Past, Present, Future)
--- PAST ACTIONS (Completed)
+-- Note: Violation IDs are auto-incremented 1-37 based on insertion order above
+-- PAST ACTIONS (Completed) - For violations 1-12
 INSERT INTO disciplinary_actions (violation_id, action_type, description, issued_by, start_date, end_date, status, remarks) VALUES
 (1, 'warning', 'First offense - verbal warning issued for tardiness.', 3, '2026-01-15', NULL, 'completed', 'Student acknowledged'),
 (2, 'suspension', 'Two-day suspension for cheating during exam.', 3, '2026-01-19', '2026-01-20', 'completed', 'Parent conference held'),
@@ -429,8 +430,10 @@ INSERT INTO disciplinary_actions (violation_id, action_type, description, issued
 (8, 'counseling', 'Mandatory counseling for disrespectful behavior.', 4, '2026-02-13', '2026-02-27', 'completed', 'Attended 3 sessions'),
 (9, 'detention', 'Three-day detention for habitual tardiness.', 3, '2026-02-16', '2026-02-18', 'completed', 'Completed successfully'),
 (10, 'community_service', 'Six hours repairing damaged school property.', 4, '2026-02-20', '2026-02-27', 'completed', 'Vandalism addressed'),
+(11, 'warning', 'Warning for mobile phone use during class.', 3, '2026-02-22', NULL, 'completed', 'Student acknowledged'),
+(12, 'warning', 'Warning for dress code violation.', 4, '2026-02-26', NULL, 'completed', 'Student complied'),
 
--- PRESENT ACTIONS (Active/Ongoing)
+-- PRESENT ACTIONS (Active/Ongoing) - For violations 13-35
 (13, 'warning', 'First offense - verbal warning issued. Student counseled about punctuality.', 3, '2026-03-10', NULL, 'completed', 'Student acknowledged'),
 (15, 'detention', 'One-day detention for using mobile phone during class. Parent notified.', 3, '2026-03-13', '2026-03-13', 'completed', 'Served detention'),
 (16, 'suspension', 'Three-day suspension for academic dishonesty. Parent conference conducted.', 3, '2026-03-09', '2026-03-11', 'completed', 'Parent agreed with action'),
@@ -441,13 +444,12 @@ INSERT INTO disciplinary_actions (violation_id, action_type, description, issued
 (25, 'community_service', 'Eight hours of community service - cleaning school grounds after classes.', 4, '2026-03-20', '2026-04-03', 'active', 'Completed 5 hours so far'),
 (28, 'warning', 'Warning issued for bringing prohibited items. Items confiscated.', 3, '2026-03-22', NULL, 'completed', 'Items returned to parent'),
 (30, 'counseling', 'Academic integrity counseling required. Must attend workshop on proper citation.', 4, '2026-03-25', '2026-04-08', 'active', 'Workshop scheduled'),
-(32, 'detention', 'One-day detention for habitual tardiness.', 3, '2026-03-28', '2026-03-28', 'active', 'Scheduled for today'),
-(34, 'warning', 'Warning for missing school ID. Must present ID tomorrow.', 4, '2026-03-28', NULL, 'active', 'Pending compliance'),
+(34, 'detention', 'One-day detention for habitual tardiness.', 3, '2026-03-28', '2026-03-28', 'active', 'Scheduled for today'),
+(35, 'warning', 'Warning for missing school ID. Must present ID tomorrow.', 4, '2026-03-28', NULL, 'active', 'Pending compliance'),
 
--- FUTURE ACTIONS (Pending/Scheduled)
+-- FUTURE ACTIONS (Pending/Scheduled) - For violations 36-37
 (36, 'detention', 'One-day detention scheduled for littering offense.', 3, '2026-04-02', '2026-04-02', 'pending', 'Parent notified'),
-(37, 'warning', 'Warning to be issued for mobile phone use.', 4, '2026-04-01', NULL, 'pending', 'Awaiting student conference'),
-(38, 'counseling', 'Counseling session scheduled for behavioral issues.', 4, '2026-04-03', '2026-04-17', 'pending', 'Initial session scheduled');
+(37, 'warning', 'Warning to be issued for mobile phone use.', 4, '2026-04-01', NULL, 'pending', 'Awaiting student conference');
 
 -- Uniform Passes
 INSERT INTO uniform_passes (student_id, academic_period_id, pass_code, reason, issued_by, valid_date, status) VALUES
