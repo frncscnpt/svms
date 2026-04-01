@@ -104,7 +104,7 @@ self.addEventListener('push', event => {
         }
     } else {
         // Fetch from API (uses browser cookies automatically)
-        promise = fetch('/api/get_latest_notification.php')
+        promise = fetch('./api/get_latest_notification.php')
             .then(res => res.json())
             .catch(() => ({ title: 'SVMS', message: 'You have a new alert.' }));
     }
@@ -113,11 +113,11 @@ self.addEventListener('push', event => {
         promise.then(data => {
             const options = {
                 body: data.message,
-                icon: '/assets/img/logo.png',
-                badge: '/assets/img/logo.png',
+                icon: './assets/img/logo.png',
+                badge: './assets/img/logo.png',
                 vibrate: [100, 50, 100],
                 data: {
-                    url: data.link || '/notifications.php'
+                    url: data.link || './notifications.php'
                 }
             };
             return self.registration.showNotification(data.title, options);
