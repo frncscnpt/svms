@@ -842,16 +842,14 @@ $errParam = $_GET['error'] ?? '';
         // Register service worker FIRST before anything else
         let swRegistrationPromise = null;
         if ('serviceWorker' in navigator) {
-            // Use BASE_PATH from PHP - ensure proper path format
-            const basePath = '<?= rtrim(BASE_PATH, "/") ?>';
-            const swPath = basePath + '/sw.js';
-            const swScope = basePath + '/';
+            const swPath = './sw.js';
+            const swScope = './';
             
             console.log('Registering service worker at:', swPath, 'with scope:', swScope);
             
             swRegistrationPromise = navigator.serviceWorker.register(swPath, { 
                 scope: swScope,
-                type: 'classic' // Explicitly set type
+                type: 'classic'
             })
                 .then(reg => {
                     console.log('✅ Service Worker registered successfully:', reg);

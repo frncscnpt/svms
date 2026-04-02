@@ -268,17 +268,25 @@ function getManifestDataUri() {
     
     if (json_last_error() === JSON_ERROR_NONE && is_array($manifest)) {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-        $baseUrl = $protocol . '://' . $_SERVER['HTTP_HOST'] . BASE_PATH;
+        $baseUrl = $protocol . '://' . $_SERVER['HTTP_HOST'] . rtrim(BASE_PATH, '/');
         
         // Convert relative paths to absolute paths
-        if (isset($manifest['start_url'])) $manifest['start_url'] = $baseUrl . ltrim($manifest['start_url'], '/');
-        if (isset($manifest['id'])) $manifest['id'] = $baseUrl . ltrim($manifest['id'], '/');
-        if (isset($manifest['scope'])) $manifest['scope'] = $baseUrl . '/';
+        if (isset($manifest['start_url'])) {
+            $manifest['start_url'] = $baseUrl . '/';
+        }
+        if (isset($manifest['id'])) {
+            $manifest['id'] = $baseUrl . '/';
+        }
+        if (isset($manifest['scope'])) {
+            $manifest['scope'] = $baseUrl . '/';
+        }
         
         if (isset($manifest['icons']) && is_array($manifest['icons'])) {
             foreach ($manifest['icons'] as &$icon) {
-                if (isset($icon['src']) && strpos($icon['src'], '/') === 0) {
-                    $icon['src'] = $baseUrl . ltrim($icon['src'], '/');
+                if (isset($icon['src'])) {
+                    // Remove ./ prefix and make absolute
+                    $src = ltrim($icon['src'], './');
+                    $icon['src'] = $baseUrl . '/' . $src;
                 }
             }
         }
@@ -311,8 +319,22 @@ function getAvatarHtml($avatarPath, $fullName, $containerClass = 'user-avatar', 
     }
 
     if (!empty($avatarPath)) {
-        $src = (strpos($avatarPath, 'http') === 0) ? $avatarPath : rtrim(BASE_PATH, '/') . '/' . ltrim($avatarPath, '/');
-        return '<img src="' . $src . '" alt="' . sanitize($fullName) . '" class="' . $containerClass . ' rounded-circle shadow-xs" style="object-fit: cover; ' . $style . '">';
+        // Check if file exists (only for local paths)
+        $fileExists = true;
+        if (strpos($avatarPath, 'http') !== 0) {
+            $fullPath = __DIR__ . '/../' . ltrim($avatarPath, '/');
+            $fileExists = file_exists($fullPath);
+        }
+        
+        if ($fileExists) {
+            $src = (strpos($avatarPath, 'http') === 0) ? $avatarPath : rtrim(BASE_PATH, '/') . '/' . ltrim($avatarPath, '/');
+            
+            // Add onerror handler to fallback to initials if image fails to load
+            $fallbackStyle = "background: hsl({$hue}, 45%, 45%); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; border-radius: 50%; " . $style;
+            $onError = "this.onerror=null; this.outerHTML='<div class=\"{$containerClass} shadow-xs\" style=\"{$fallbackStyle}\" title=\"" . sanitize($fullName) . "\">{$initials}</div>';";
+            
+            return '<img src="' . $src . '" alt="' . sanitize($fullName) . '" class="' . $containerClass . ' rounded-circle shadow-xs" style="object-fit: cover; ' . $style . '" onerror="' . $onError . '">';
+        }
     }
     
     // Fallback style with HSL background

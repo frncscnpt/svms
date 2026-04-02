@@ -3,7 +3,7 @@
  * Cache-first for static assets, network-first for API/pages
  */
 
-const CACHE_NAME = 'svms-v1.0.2';
+const CACHE_NAME = 'svms-v1.0.3';
 
 // Install - skip waiting immediately (no pre-caching)
 self.addEventListener('install', event => {
@@ -86,7 +86,19 @@ self.addEventListener('fetch', event => {
             })
             .catch(() => {
                 return caches.match(event.request)
-                    .then(cached => cached || new Response('Offline', { status: 503 }));
+                    .then(cached => {
+                        if (cached) return cached;
+                        
+                        // Return a minimal offline page instead of 503
+                        return new Response(
+                            '<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>You are offline</h1><p>Please check your connection.</p></body></html>',
+                            { 
+                                status: 200,
+                                statusText: 'OK',
+                                headers: { 'Content-Type': 'text/html' }
+                            }
+                        );
+                    });
             })
     );
 });
