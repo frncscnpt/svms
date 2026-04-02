@@ -1,16 +1,22 @@
 # PWA MIME Types - Required for InfinityFree
-AddType application/manifest+json .json
-AddType application/javascript .js
+<IfModule mod_mime.c>
+    AddType application/manifest+json .json
+    AddType application/javascript .js
+</IfModule>
 
 # Ensure proper MIME type for manifest
 <Files "manifest.json">
-    Header set Content-Type "application/manifest+json"
+    <IfModule mod_headers.c>
+        Header set Content-Type "application/manifest+json"
+    </IfModule>
 </Files>
 
 # Ensure service worker can control the entire scope
 <Files "sw.js">
-    Header set Service-Worker-Allowed "/"
-    Header set Content-Type "application/javascript"
+    <IfModule mod_headers.c>
+        Header set Service-Worker-Allowed "/"
+        Header set Content-Type "application/javascript"
+    </IfModule>
 </Files>
 
 # Cache control for PWA assets
@@ -19,3 +25,17 @@ AddType application/javascript .js
         Header set Cache-Control "public, max-age=86400"
     </FilesMatch>
 </IfModule>
+
+# Prevent directory listing
+Options -Indexes
+
+# Allow access to sw.js and manifest.json
+<FilesMatch "^(sw\.js|manifest\.json)$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</FilesMatch>

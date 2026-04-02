@@ -6,10 +6,10 @@
 
 date_default_timezone_set('Asia/Manila');
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'svms_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', 'sql101.infinityfree.com');
+define('DB_NAME', 'if0_41383491_svms_db');
+define('DB_USER', 'if0_41383491');
+define('DB_PASS', 'xndMqMFqLd5I1');
 define('DB_CHARSET', 'utf8mb4');
 
 /**
