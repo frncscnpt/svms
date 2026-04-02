@@ -300,17 +300,14 @@ $errParam = $_GET['error'] ?? '';
         .login-alert {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 14px;
-            border-radius: 10px;
+            gap: 6px;
             font-size: 13px;
-            margin-bottom: 20px;
-            background: #f0f0f0;
-            color: var(--on-surface);
+            margin-bottom: 16px;
+            color: #dc2626;
+            font-weight: 500;
         }
-        .login-alert.alert-error   { border-left: 3px solid #dc2626; }
-        .login-alert.alert-success { border-left: 3px solid #16a34a; }
-        .login-alert.alert-warn    { border-left: 3px solid #d97706; }
+        .login-alert.alert-success { color: #16a34a; }
+        .login-alert.alert-warn    { color: #d97706; }
 
         /* Fields */
         .field-group {
@@ -749,9 +746,9 @@ $errParam = $_GET['error'] ?? '';
         <!-- Left: Branding -->
         <div class="login-left">
             <!-- Background video -->
-            <!-- <video class="bg-video" autoplay muted loop playsinline>
-                <source src="assets/img/bg/lsb.mp4" type="video/mp4">
-            </video> -->
+            <video class="bg-video" autoplay muted loop playsinline>
+                <source src="https://res.cloudinary.com/di9ppzm1b/video/upload/v1775125269/elisbi_r6jbnl.mp4" type="video/mp4">
+            </video>
             <!-- Color overlay -->
             <div class="bg-overlay"></div>
             <div class="brand-top">
