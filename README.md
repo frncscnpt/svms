@@ -80,10 +80,10 @@ Built for Lyceum of Subic Bay, this system digitizes the entire violation manage
 
 | Role                | Username   | Password     |
 |---------------------|------------|--------------|
-| Admin               | admin      | admin123     |
-| Discipline Officer  | discipline | officer123   |
-| Teacher             | teacher    | teacher123   |
-| Student             | 2023010001 | student123   |
+| Admin               | admin      | password     |
+| Discipline Officer  | discipline | password     |
+| Teacher             | teacher    | password     |
+| Student             | 2023010001 | password     |
 
 **Sample Workflow:**
 
