@@ -23,6 +23,16 @@ if ($period_id) { $where .= " AND v.academic_period_id=?"; $params[] = $period_i
 
 $periods = $pdo->query("SELECT id, name FROM academic_periods ORDER BY start_date DESC")->fetchAll();
 
+$perPage = 10;
+$page = max(1, (int)($_GET['page'] ?? 1));
+
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM violations v JOIN students s ON v.student_id=s.id JOIN violation_types vt ON v.violation_type_id=vt.id JOIN users u ON v.reported_by=u.id $where");
+$countStmt->execute($params);
+$total = (int)$countStmt->fetchColumn();
+$totalPages = max(1, (int)ceil($total / $perPage));
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
+
 $stmt = $pdo->prepare("
     SELECT v.*, s.first_name, s.last_name, s.student_number, s.photo, vt.name as violation_name, vt.severity,
            u.full_name as reporter_name,
@@ -31,49 +41,45 @@ $stmt = $pdo->prepare("
     JOIN students s ON v.student_id=s.id
     JOIN violation_types vt ON v.violation_type_id=vt.id
     JOIN users u ON v.reported_by=u.id
-    $where ORDER BY v.created_at DESC LIMIT 50
+    $where ORDER BY v.created_at DESC LIMIT ? OFFSET ?
 ");
-$stmt->execute($params);
+$stmt->execute(array_merge($params, [$perPage, $offset]));
 $violations = $stmt->fetchAll();
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <p class="text-muted mb-0" style="font-size:13px;">View and manage all violation records</p>
-    </div>
-    <a href="<?= BASE_PATH ?>/admin/report_violation.php" class="btn-primary-custom" style="padding: 10px 20px; text-decoration: none;">
-        <i class="bi bi-file-earmark-plus pe-2"></i>File Direct Report
-    </a>
-</div>
-
 <div class="card-panel">
-    <form class="filter-bar" method="GET">
-        <div class="search-box">
-            <i class="bi bi-search"></i>
-            <input type="text" name="search" placeholder="Search student..." value="<?= sanitize($search) ?>">
+    <form class="filter-bar d-flex justify-content-between align-items-center" method="GET">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" placeholder="Search student..." value="<?= sanitize($search) ?>">
+            </div>
+            <select name="severity" class="form-select" style="width:auto">
+                <option value="">All Severity</option>
+                <option value="minor" <?= $severity==='minor'?'selected':'' ?>>Minor</option>
+                <option value="major" <?= $severity==='major'?'selected':'' ?>>Major</option>
+                <option value="critical" <?= $severity==='critical'?'selected':'' ?>>Critical</option>
+            </select>
+            <select name="status" class="form-select" style="width:auto">
+                <option value="">All Status</option>
+                <option value="pending" <?= $status==='pending'?'selected':'' ?>>Pending</option>
+                <option value="reviewed" <?= $status==='reviewed'?'selected':'' ?>>Reviewed</option>
+                <option value="resolved" <?= $status==='resolved'?'selected':'' ?>>Resolved</option>
+            </select>
+            <select name="period_id" class="form-select" style="width:auto">
+                <option value="">All Periods</option>
+                <?php foreach ($periods as $p): ?>
+                <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" class="btn-primary-custom"><i class="bi bi-funnel"></i> Filter</button>
+            <?php if ($search || $severity || $status || $period_id): ?>
+                <a href="<?= BASE_PATH ?>/admin/violations.php" class="btn btn-outline-secondary btn-sm">Clear</a>
+            <?php endif; ?>
         </div>
-        <select name="severity" class="form-select" style="width:auto">
-            <option value="">All Severity</option>
-            <option value="minor" <?= $severity==='minor'?'selected':'' ?>>Minor</option>
-            <option value="major" <?= $severity==='major'?'selected':'' ?>>Major</option>
-            <option value="critical" <?= $severity==='critical'?'selected':'' ?>>Critical</option>
-        </select>
-        <select name="status" class="form-select" style="width:auto">
-            <option value="">All Status</option>
-            <option value="pending" <?= $status==='pending'?'selected':'' ?>>Pending</option>
-            <option value="reviewed" <?= $status==='reviewed'?'selected':'' ?>>Reviewed</option>
-            <option value="resolved" <?= $status==='resolved'?'selected':'' ?>>Resolved</option>
-        </select>
-        <select name="period_id" class="form-select" style="width:auto">
-            <option value="">All Periods</option>
-            <?php foreach ($periods as $p): ?>
-            <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button type="submit" class="btn-primary-custom"><i class="bi bi-funnel"></i> Filter</button>
-        <?php if ($search || $severity || $status): ?>
-            <a href="<?= BASE_PATH ?>/admin/violations.php" class="btn btn-outline-secondary btn-sm">Clear</a>
-        <?php endif; ?>
+        <a href="<?= BASE_PATH ?>/admin/report_violation.php" class="btn-primary-custom" style="padding:10px 20px;text-decoration:none;white-space:nowrap;">
+            <i class="bi bi-file-earmark-plus pe-2"></i>File Direct Report
+        </a>
     </form>
 
     <div class="data-table-wrapper">
@@ -86,7 +92,7 @@ $violations = $stmt->fetchAll();
                 <tr>
                     <td>
                         <div class="user-cell">
-                                <?= getAvatarHtml($v['photo'] ?? null, $v['first_name'] . ' ' . $v['last_name'], 'user-avatar-sm') ?>
+                            <?= getAvatarHtml($v['photo'] ?? null, $v['first_name'] . ' ' . $v['last_name'], 'user-avatar') ?>
                             <div class="user-info">
                                 <div class="name"><?= sanitize($v['first_name'].' '.$v['last_name']) ?></div>
                                 <div class="sub"><?= sanitize($v['student_number']) ?></div>
@@ -115,6 +121,21 @@ $violations = $stmt->fetchAll();
             </tbody>
         </table>
     </div>
+    <?php if ($totalPages > 1): ?>
+    <?php
+    $baseUrl = strtok($_SERVER['REQUEST_URI'], '?');
+    $qp = array_filter(['search' => $search, 'severity' => $severity, 'status' => $status, 'period_id' => $period_id]);
+    ?>
+    <div class="panel-footer">
+        <nav><ul class="pagination justify-content-center mb-0">
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                <a class="page-link" href="<?= $baseUrl ?>?<?= http_build_query(array_merge($qp, ['page' => $i]), '', '&') ?>"><?= $i ?></a>
+            </li>
+            <?php endfor; ?>
+        </ul></nav>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

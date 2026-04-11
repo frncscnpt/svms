@@ -92,8 +92,26 @@ if (isset($_GET['violation_id'])) {
     $prefillViolation = $prefill->fetch();
 }
 
-// List actions
-$actions = $pdo->query("
+// Filters
+$filterStatus = $_GET['status'] ?? '';
+$filterSearch = $_GET['search'] ?? '';
+$where = "WHERE 1=1";
+$params = [];
+if ($filterStatus) { $where .= " AND da.status=?"; $params[] = $filterStatus; }
+if ($filterSearch) { $where .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_number LIKE ?)"; $params = array_merge($params, ["%$filterSearch%","%$filterSearch%","%$filterSearch%"]); }
+
+// Pagination
+$perPage = 6;
+$page = max(1, (int)($_GET['page'] ?? 1));
+
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM disciplinary_actions da JOIN violations v ON da.violation_id=v.id JOIN students s ON v.student_id=s.id JOIN violation_types vt ON v.violation_type_id=vt.id JOIN users u ON da.issued_by=u.id $where");
+$countStmt->execute($params);
+$totalCount = (int)$countStmt->fetchColumn();
+$totalPages = max(1, (int)ceil($totalCount / $perPage));
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
+
+$stmt = $pdo->prepare("
     SELECT da.*, v.description as v_desc, s.first_name, s.last_name, s.student_number, s.grade_level,
            vt.name as violation_name, u.full_name as issuer
     FROM disciplinary_actions da
@@ -101,8 +119,10 @@ $actions = $pdo->query("
     JOIN students s ON v.student_id=s.id
     JOIN violation_types vt ON v.violation_type_id=vt.id
     JOIN users u ON da.issued_by=u.id
-    ORDER BY da.created_at DESC LIMIT 30
-")->fetchAll();
+    $where ORDER BY da.created_at DESC LIMIT ? OFFSET ?
+");
+$stmt->execute(array_merge($params, [$perPage, $offset]));
+$actions = $stmt->fetchAll();
 
 // Unactioned violations
 $unactioned = $pdo->query("
@@ -116,14 +136,27 @@ $unactioned = $pdo->query("
 ")->fetchAll();
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <p class="text-muted mb-0" style="font-size:13px;">Issue and manage disciplinary actions</p>
-    <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#actionModal">
-        <i class="bi bi-plus-lg"></i> Issue Action
-    </button>
-</div>
-
 <div class="card-panel">
+    <form class="filter-bar d-flex justify-content-between align-items-center" method="GET">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" placeholder="Search student..." value="<?= sanitize($filterSearch) ?>">
+            </div>
+            <select name="status" class="form-select" style="width:auto">
+                <option value="">All Status</option>
+                <option value="active"    <?= $filterStatus==='active'    ?'selected':'' ?>>Active</option>
+                <option value="pending"   <?= $filterStatus==='pending'   ?'selected':'' ?>>Pending</option>
+                <option value="completed" <?= $filterStatus==='completed' ?'selected':'' ?>>Completed</option>
+            </select>
+            <button type="submit" class="btn-primary-custom"><i class="bi bi-funnel"></i> Filter</button>
+            <?php if ($filterSearch || $filterStatus): ?><a href="<?= BASE_PATH ?>/discipline/actions.php" class="btn btn-outline-secondary btn-sm">Clear</a><?php endif; ?>
+        </div>
+        <button type="button" class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#actionModal" style="white-space:nowrap;">
+            <i class="bi bi-plus-lg"></i> Issue Action
+        </button>
+    </form>
+
     <div class="data-table-wrapper">
         <table class="data-table">
             <thead><tr><th>Student</th><th>Violation</th><th>Action</th><th>Duration</th><th>Status</th><th>Issued By</th><th>Actions</th></tr></thead>
@@ -135,7 +168,7 @@ $unactioned = $pdo->query("
                             <?= getAvatarHtml($a['photo'] ?? null, $a['first_name'].' '.$a['last_name'], 'user-avatar') ?>
                             <div class="user-info">
                                 <div class="name"><?= sanitize($a['first_name'].' '.$a['last_name']) ?></div>
-                                <div class="sub"><?= sanitize($a['student_number']) ?></div>
+                                <div class="sub"><?= sanitize($a['student_number']) ?> · <?= sanitize($a['grade_level']) ?></div>
                             </div>
                         </div>
                     </td>
@@ -150,11 +183,18 @@ $unactioned = $pdo->query("
                     <td><?= statusBadge($a['status']) ?></td>
                     <td><small><?= sanitize($a['issuer']) ?></small></td>
                     <td>
-                        <?php if ($a['status'] === 'active'): ?>
-                        <a href="?update_action=<?=$a['id']?>&new_status=completed" class="action-btn" title="Mark Complete"><i class="bi bi-check-lg"></i></a>
-                        <?php elseif ($a['status'] === 'pending'): ?>
-                        <a href="?update_action=<?=$a['id']?>&new_status=active" class="action-btn" title="Activate"><i class="bi bi-play-fill"></i></a>
-                        <?php endif; ?>
+                        <div class="dropdown">
+                            <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <?php if ($a['status'] === 'pending'): ?>
+                                <li><a class="dropdown-item" href="?update_action=<?=$a['id']?>&new_status=active"><i class="bi bi-play-fill"></i> Activate</a></li>
+                                <?php endif; ?>
+                                <?php if ($a['status'] === 'active'): ?>
+                                <li><a class="dropdown-item" href="?update_action=<?=$a['id']?>&new_status=completed"><i class="bi bi-check-circle"></i> Mark Completed</a></li>
+                                <?php endif; ?>
+                                <li><a class="dropdown-item" href="<?= BASE_PATH ?>/discipline/history.php?student=<?=$a['student_id'] ?? ''?>"><i class="bi bi-clock-history"></i> View History</a></li>
+                            </ul>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -162,6 +202,21 @@ $unactioned = $pdo->query("
             </tbody>
         </table>
     </div>
+    <?php if ($totalPages > 1): ?>
+    <?php
+    $baseUrl = strtok($_SERVER['REQUEST_URI'], '?');
+    $queryParams = array_filter(['status' => $filterStatus, 'search' => $filterSearch]);
+    ?>
+    <div class="panel-footer">
+        <nav><ul class="pagination justify-content-center mb-0">
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                <a class="page-link" href="<?= $baseUrl ?>?<?= http_build_query(array_merge($queryParams, ['page' => $i]), '', '&') ?>"><?= $i ?></a>
+            </li>
+            <?php endfor; ?>
+        </ul></nav>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- Action Modal -->

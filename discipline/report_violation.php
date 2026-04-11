@@ -21,9 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($upload['success']) $evidencePath = $upload['path'];
         }
         
-        $stmt = $pdo->prepare("INSERT INTO violations (student_id, violation_type_id, reported_by, description, evidence_path, location, date_occurred, status) VALUES (?,?,?,?,?,?,?,?)");
+        $stmt = $pdo->prepare("INSERT INTO violations (student_id, academic_period_id, violation_type_id, reported_by, description, evidence_path, location, date_occurred, status) VALUES (?,?,?,?,?,?,?,?,?)");
         $stmt->execute([
             $_POST['student_id'],
+            getActiveAcademicPeriodId(),
             $_POST['violation_type_id'],
             $_SESSION['user_id'],
             sanitize($_POST['description'] ?? ''),
@@ -89,7 +90,7 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
                                 <span class="text-muted" style="font-size: 13px;"><?= sanitize($student['student_number']) ?> · <?= sanitize($student['grade_level'] . ' - ' . $student['section']) ?></span>
                             </div>
                         </div>
-                        <a href="?_" class="btn btn-sm btn-outline-secondary mt-3"><i class="bi bi-arrow-repeat"></i> Change Student</a>
+                        <a href="<?= BASE_PATH ?>/discipline/report_violation.php" class="btn btn-sm btn-outline-secondary mt-3"><i class="bi bi-arrow-repeat"></i> Change Student</a>
                     <?php else: ?>
                         <div class="form-group mb-0">
                             <label class="form-label">Select Student *</label>

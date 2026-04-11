@@ -54,7 +54,17 @@ function trendBadge($current, $previous, $label = 'vs last month') {
     return '<span class="stat-trend down"><i class="bi bi-arrow-down-short"></i>' . $pct . '% ' . $label . '</span>';
 }
 
-// Recent violations
+// Recent violations with pagination
+$rvPerPage = 5;
+$rvPage = max(1, (int)($_GET['rv_page'] ?? 1));
+
+$rvCountStmt = $pdo->prepare("SELECT COUNT(*) FROM violations v $where");
+$rvCountStmt->execute($params);
+$rvTotal = (int)$rvCountStmt->fetchColumn();
+$rvTotalPages = max(1, (int)ceil($rvTotal / $rvPerPage));
+$rvPage = min($rvPage, $rvTotalPages);
+$rvOffset = ($rvPage - 1) * $rvPerPage;
+
 $recentViolations = $pdo->prepare("
     SELECT v.*, s.first_name, s.last_name, s.student_number, s.photo, vt.name as violation_name, vt.severity,
            u.full_name as reporter_name
@@ -63,9 +73,9 @@ $recentViolations = $pdo->prepare("
     JOIN violation_types vt ON v.violation_type_id = vt.id
     JOIN users u ON v.reported_by = u.id
     $where
-    ORDER BY v.created_at DESC LIMIT 8
+    ORDER BY v.created_at DESC LIMIT ? OFFSET ?
 ");
-$recentViolations->execute($params);
+$recentViolations->execute(array_merge($params, [$rvPerPage, $rvOffset]));
 $recentViolations = $recentViolations->fetchAll();
 
 // Violations by type (for chart)
@@ -96,7 +106,7 @@ $monthlyTrend = $monthlyTrend->fetchAll();
 $recentActivity = $pdo->query("
     SELECT al.*, u.full_name FROM activity_log al
     LEFT JOIN users u ON al.user_id = u.id
-    ORDER BY al.created_at DESC LIMIT 6
+    ORDER BY al.created_at DESC LIMIT 3
 ")->fetchAll();
 ?>
 
@@ -188,13 +198,13 @@ $recentActivity = $pdo->query("
 
 <!-- ── Recent Violations + Activity ── -->
 <div class="row g-3 mb-4">
-    <div class="col-lg-8">
-        <div class="card-panel">
+    <div class="col-lg-8 d-flex">
+        <div class="card-panel w-100 d-flex flex-column">
             <div class="panel-header">
                 <h5 class="panel-title"><i class="bi bi-exclamation-triangle"></i> Recent Violations</h5>
                 <a href="<?= BASE_PATH ?>/admin/violations.php" class="btn btn-sm btn-outline-custom">View All</a>
             </div>
-            <div class="data-table-wrapper">
+            <div class="data-table-wrapper" style="flex:1;">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -229,15 +239,30 @@ $recentActivity = $pdo->query("
                     </tbody>
                 </table>
             </div>
+            <?php if ($rvTotalPages > 1): ?>
+            <?php
+            $rvBaseUrl = strtok($_SERVER['REQUEST_URI'], '?');
+            $rvParams = array_filter(['period_id' => $period_id]);
+            ?>
+            <div class="panel-footer">
+                <nav><ul class="pagination justify-content-center mb-0">
+                    <?php for ($i = 1; $i <= $rvTotalPages; $i++): ?>
+                    <li class="page-item <?= $i == $rvPage ? 'active' : '' ?>">
+                        <a class="page-link" href="<?= $rvBaseUrl ?>?<?= http_build_query(array_merge($rvParams, ['rv_page' => $i]), '', '&') ?>"><?= $i ?></a>
+                    </li>
+                    <?php endfor; ?>
+                </ul></nav>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
-    <div class="col-lg-4">
-        <div class="card-panel h-100">
+    <div class="col-lg-4 d-flex">
+        <div class="card-panel w-100 d-flex flex-column">
             <div class="panel-header">
                 <h5 class="panel-title"><i class="bi bi-activity"></i> Recent Activity</h5>
             </div>
-            <div class="panel-body">
+            <div class="panel-body" style="flex:1;overflow-y:auto;max-height:320px;">
                 <div class="timeline">
                     <?php foreach ($recentActivity as $i => $act):
                         $colors = ['accent','success','warning','danger','info','accent'];
@@ -273,6 +298,7 @@ $recentActivity = $pdo->query("
                         <i class="bi bi-qr-code-scan me-2"></i>Quick Student Lookup
                     </div>
                     <div id="qrReader" style="width:100%;max-width:280px;margin:0 auto;border-radius:12px;overflow:hidden;"></div>
+                    <style>#qrReader video { transform: scaleX(-1); }</style>
                     <button id="startScanBtn" class="btn-qr-start mt-3" style="display:none;" onclick="startScanner()">
                         <i class="bi bi-camera me-2"></i>Start Scanner
                     </button>

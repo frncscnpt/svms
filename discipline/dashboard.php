@@ -14,16 +14,28 @@ $reviewedCount = $pdo->query("SELECT COUNT(*) FROM violations WHERE status='revi
 $resolvedCount = $pdo->query("SELECT COUNT(*) FROM violations WHERE status='resolved'")->fetchColumn();
 $thisMonth     = $pdo->query("SELECT COUNT(*) FROM violations WHERE MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())")->fetchColumn();
 
-// Pending violations
-$pending = $pdo->query("
+// Pending violations with pagination
+$perPage = 3;
+$page = max(1, (int)($_GET['pv_page'] ?? 1));
+$offset = ($page - 1) * $perPage;
+$totalPending = (int)$pdo->query("SELECT COUNT(*) FROM violations WHERE status='pending'")->fetchColumn();
+$totalPages = max(1, (int)ceil($totalPending / $perPage));
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
+
+$stmt = $pdo->prepare("
     SELECT v.*, s.first_name, s.last_name, s.student_number, s.grade_level, s.section,
            vt.name as violation_name, vt.severity, u.full_name as reporter
     FROM violations v
     JOIN students s ON v.student_id=s.id
     JOIN violation_types vt ON v.violation_type_id=vt.id
     JOIN users u ON v.reported_by=u.id
-    WHERE v.status='pending' ORDER BY v.created_at DESC LIMIT 10
-")->fetchAll();
+    WHERE v.status='pending' ORDER BY v.created_at DESC LIMIT :limit OFFSET :offset
+");
+$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
+$pending = $stmt->fetchAll();
 
 // Recent actions
 $recentActions = $pdo->query("
@@ -34,7 +46,7 @@ $recentActions = $pdo->query("
     JOIN students s ON v.student_id=s.id
     JOIN violation_types vt ON v.violation_type_id=vt.id
     JOIN users u ON da.issued_by=u.id
-    ORDER BY da.created_at DESC LIMIT 5
+    ORDER BY da.created_at DESC LIMIT 3
 ")->fetchAll();
 ?>
 
@@ -85,8 +97,8 @@ $recentActions = $pdo->query("
 <!-- QR Scanner + Pending Violations -->
 <div class="row g-3 mb-4">
     <!-- QR Scanner -->
-    <div class="col-lg-4">
-        <div class="card-panel h-100">
+    <div class="col-lg-4 d-flex">
+        <div class="card-panel w-100 d-flex flex-column">
             <div class="panel-header">
                 <h5 class="panel-title"><i class="bi bi-qr-code-scan"></i> Quick Student Scan</h5>
                 <div class="d-flex align-items-center gap-2">
@@ -102,6 +114,7 @@ $recentActions = $pdo->query("
             <div class="panel-body text-center" style="padding:16px;">
                 <div id="scannerSection">
                     <div id="qrReader" style="width:100%;border-radius:8px;overflow:hidden;margin-bottom:10px;display:none;"></div>
+                    <style>#qrReader video { transform: scaleX(-1); }</style>
                     <div id="camOffPlaceholder" style="display:flex;width:100%;border-radius:8px;background:#f7f2f8;border:1.5px dashed #ede9ee;min-height:200px;align-items:center;justify-content:center;flex-direction:column;gap:8px;margin-bottom:10px;">
                         <i class="bi bi-camera-video-off" style="font-size:32px;color:var(--text-muted);"></i>
                         <span style="font-size:12px;color:var(--text-muted);">Camera is off</span>
@@ -145,13 +158,13 @@ $recentActions = $pdo->query("
     </div>
 
     <!-- Pending Violations -->
-    <div class="col-lg-8">
-        <div class="card-panel h-100">
+    <div class="col-lg-8 d-flex">
+        <div class="card-panel w-100 d-flex flex-column">
             <div class="panel-header">
                 <h5 class="panel-title"><i class="bi bi-exclamation-triangle"></i> Pending Violations</h5>
                 <a href="<?= BASE_PATH ?>/discipline/violations.php?status=pending" class="btn btn-sm btn-outline-custom">View All</a>
             </div>
-            <div class="data-table-wrapper">
+            <div class="data-table-wrapper" style="flex:1;">
                 <table class="data-table">
                     <thead>
                         <tr><th>Student</th><th>Violation</th><th>Severity</th><th>Reported By</th><th>Date</th><th>Action</th></tr>
@@ -185,6 +198,21 @@ $recentActions = $pdo->query("
                     </tbody>
                 </table>
             </div>
+            <?php if ($totalPages > 1): ?>
+            <?php
+            $baseUrl = strtok($_SERVER['REQUEST_URI'], '?');
+            $params = $_GET;
+            ?>
+            <div class="panel-footer">
+                <nav><ul class="pagination justify-content-center mb-0">
+                    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                    <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                        <a class="page-link" href="<?= $baseUrl ?>?<?= http_build_query(array_merge($params, ['pv_page' => $i]), '', '&') ?>"><?= $i ?></a>
+                    </li>
+                    <?php endfor; ?>
+                </ul></nav>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

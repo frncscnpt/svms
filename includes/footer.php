@@ -71,15 +71,6 @@ function confirmLogout(e) {
     e.preventDefault();
     document.getElementById('logoutModal').style.display = 'flex';
 }
-
-document.getElementById('logoutCancel')?.addEventListener('click', function() {
-    document.getElementById('logoutModal').style.display = 'none';
-});
-
-// Close on backdrop click
-document.getElementById('logoutModal')?.addEventListener('click', function(e) {
-    if (e.target === this) this.style.display = 'none';
-});
 </script>
 
 <!-- Logout Confirmation Modal -->
@@ -96,5 +87,15 @@ document.getElementById('logoutModal')?.addEventListener('click', function(e) {
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('logoutCancel').addEventListener('click', function() {
+    document.getElementById('logoutModal').style.display = 'none';
+});
+
+document.getElementById('logoutModal').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+});
+</script>
 </body>
 </html>

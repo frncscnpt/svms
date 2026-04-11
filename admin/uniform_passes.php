@@ -122,7 +122,7 @@ $historyResult = paginate(
      JOIN users u ON up.issued_by = u.id
      WHERE $historyBaseWhere
      ORDER BY up.created_at DESC",
-    $historyParams, $page, 15
+    $historyParams, $page, 5
 );
 
 $students = $pdo->query("SELECT id, student_number, first_name, last_name, grade_level, section FROM students WHERE status = 'active' ORDER BY last_name, first_name")->fetchAll();
@@ -164,14 +164,13 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
     </div>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="mb-0 fw-bold" style="font-size:16px;">Active Passes Today</h5>
-    <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#issueModal">
-        <i class="bi bi-plus-lg"></i> Issue Pass
-    </button>
-</div>
-
 <div class="card-panel mb-4">
+    <div class="panel-header">
+        <h5 class="panel-title"><i class="bi bi-card-checklist"></i> Active Passes Today</h5>
+        <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#issueModal">
+            <i class="bi bi-plus-lg"></i> Issue Pass
+        </button>
+    </div>
     <?php if (empty($activePasses)): ?>
         <div class="text-center py-5 text-muted">
             <i class="bi bi-card-checklist d-block mb-2" style="font-size: 36px;"></i>
@@ -198,12 +197,14 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
                     <td><code style="font-size:11px;"><?= sanitize($p['pass_code']) ?></code></td>
                     <td><small><?= sanitize($p['issued_by_name']) ?></small></td>
                     <td>
-                        <a href="print_pass.php?id=<?= $p['id'] ?>" class="action-btn text-primary-custom" title="Print Pass" target="_blank">
-                            <i class="bi bi-printer"></i>
-                        </a>
-                        <button type="button" class="action-btn text-danger" title="Revoke Pass" onclick="confirmRevoke(<?= $p['id'] ?>)">
-                            <i class="bi bi-x-circle"></i>
-                        </button>
+                        <div class="dropdown">
+                            <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="print_pass.php?id=<?= $p['id'] ?>" target="_blank"><i class="bi bi-printer"></i> Print Pass</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmRevoke(<?= $p['id'] ?>)"><i class="bi bi-x-circle"></i> Revoke Pass</a></li>
+                            </ul>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -213,22 +214,27 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
     <?php endif; ?>
 </div>
 
-<h5 class="mb-3 fw-bold" style="font-size:16px;">Pass History</h5>
 <div class="card-panel">
-    <form method="GET" class="mb-3 d-flex gap-2">
-        <div class="input-group">
-            <input type="text" class="form-control" name="search" placeholder="Search by name, student number, or pass code..." value="<?= sanitize($search) ?>">
-            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+    <div class="panel-header">
+        <h5 class="panel-title"><i class="bi bi-clock-history"></i> Pass History</h5>
+    </div>
+    <form method="GET" class="filter-bar d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" placeholder="Search by name, student number, or pass code..." value="<?= sanitize($search) ?>">
+            </div>
+            <select name="period_id" class="form-select" style="width:auto">
+                <option value="">All Periods</option>
+                <?php foreach ($periods as $p): ?>
+                <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" class="btn-primary-custom"><i class="bi bi-funnel"></i> Filter</button>
+            <?php if ($search || $period_id): ?>
+                <a href="<?= BASE_PATH ?>/admin/uniform_passes.php" class="btn btn-outline-secondary btn-sm">Clear</a>
+            <?php endif; ?>
         </div>
-        <select name="period_id" class="form-select" style="max-width:200px;" onchange="this.form.submit()">
-            <option value="">All Periods</option>
-            <?php foreach ($periods as $p): ?>
-            <option value="<?= $p['id'] ?>" <?= $period_id == $p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?php if ($search || $period_id): ?>
-            <a href="<?= BASE_PATH ?>/admin/uniform_passes.php" class="btn btn-outline-secondary">Clear</a>
-        <?php endif; ?>
     </form>
 
     <div class="data-table-wrapper">
@@ -243,9 +249,12 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
                 ?>
                 <tr>
                     <td>
-                        <div class="user-info">
-                            <div class="name"><?= sanitize($h['first_name'].' '.$h['last_name']) ?></div>
-                            <div class="sub"><?= sanitize($h['student_number']) ?></div>
+                        <div class="user-cell">
+                            <?= getAvatarHtml($h['photo'] ?? null, $h['first_name'].' '.$h['last_name'], 'user-avatar') ?>
+                            <div class="user-info">
+                                <div class="name"><?= sanitize($h['first_name'].' '.$h['last_name']) ?></div>
+                                <div class="sub"><?= sanitize($h['student_number']) ?> · <?= sanitize($h['grade_level'].' - '.$h['section']) ?></div>
+                            </div>
                         </div>
                     </td>
                     <td><small><?= sanitize($h['reason']) ?></small></td>
@@ -254,9 +263,12 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
                     <td><small><?= sanitize($h['issued_by_name']) ?></small></td>
                     <td><small class="text-muted"><?= timeAgo($h['created_at']) ?></small></td>
                     <td>
-                        <a href="print_pass.php?id=<?= $h['id'] ?>" class="action-btn text-primary-custom" title="Print Pass" target="_blank">
-                            <i class="bi bi-printer"></i>
-                        </a>
+                        <div class="dropdown">
+                            <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="print_pass.php?id=<?= $h['id'] ?>" target="_blank"><i class="bi bi-printer"></i> Print Pass</a></li>
+                            </ul>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -264,7 +276,11 @@ $totalCount = $pdo->query("SELECT COUNT(*) FROM uniform_passes")->fetchColumn();
             </tbody>
         </table>
     </div>
-    <?= renderPagination($historyResult, '?search=' . urlencode($search)) ?>
+    <?php if ($historyResult['total_pages'] > 1): ?>
+    <div class="panel-footer">
+        <?= renderPagination($historyResult, '?search=' . urlencode($search)) ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- Revoke Confirm Modal -->

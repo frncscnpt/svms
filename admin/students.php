@@ -111,7 +111,7 @@ if ($grade) {
 }
 
 $page = max(1, intval($_GET['page'] ?? 1));
-$perPage = 15;
+$perPage = 10;
 $offset = ($page - 1) * $perPage;
 
 $countStmt = $pdo->prepare("SELECT COUNT(*) FROM students s $where");

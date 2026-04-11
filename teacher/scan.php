@@ -14,6 +14,7 @@ requireRole('teacher');
 <div id="scannerCard" class="scanner-fullview">
     <!-- Camera feed -->
     <div id="qrReader" class="scanner-video-feed"></div>
+    <style>#qrReader video { transform: scaleX(-1); }</style>
     
     <!-- Scanner overlay -->
     <div class="scanner-overlay">

@@ -83,7 +83,14 @@ if ($searchQuery && !$studentId) {
                     </td>
                     <td><?= sanitize($sr['grade_level'].' - '.$sr['section']) ?></td>
                     <td><span class="badge <?= $sr['v_count'] > 0 ? 'badge-soft-danger' : 'badge-soft-success' ?>"><?= $sr['v_count'] ?></span></td>
-                    <td><a href="?student=<?= $sr['id'] ?>" class="btn-primary-custom" style="padding:5px 14px;font-size:12px;">View History</a></td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="?student=<?= $sr['id'] ?>"><i class="bi bi-clock-history"></i> View History</a></li>
+                            </ul>
+                        </div>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -118,16 +125,18 @@ if ($searchQuery && !$studentId) {
             <div class="panel-header"><h5 class="panel-title"><i class="bi bi-exclamation-triangle"></i> Violations (<?= count($violations) ?>)</h5></div>
             <div class="data-table-wrapper">
                 <table class="data-table">
-                    <thead><tr><th>Violation</th><th>Severity</th><th>Status</th><th>Date</th></tr></thead>
+                    <thead><tr><th>Violation</th><th>Severity</th><th>Reporter</th><th>Status</th><th>Date</th></tr></thead>
                     <tbody>
                         <?php foreach ($violations as $v): ?>
                         <tr>
                             <td><?= sanitize($v['violation_name']) ?></td>
                             <td><?= severityBadge($v['severity']) ?></td>
+                            <td><small><?= sanitize($v['reporter']) ?></small></td>
                             <td><?= statusBadge($v['status']) ?></td>
                             <td><small class="text-muted"><?= formatDateTime($v['date_occurred']) ?></small></td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php if (empty($violations)): ?><tr><td colspan="5" class="text-center text-muted py-3">No violations on record</td></tr><?php endif; ?>
                     </tbody>
                 </table>
             </div>

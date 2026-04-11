@@ -32,6 +32,17 @@ $params = [];
 if ($status) { $where .= " AND v.status=?"; $params[] = $status; }
 if ($search) { $where .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_number LIKE ?)"; $params = array_merge($params, ["%$search%","%$search%","%$search%"]); }
 
+// Pagination
+$perPage = 6;
+$page = max(1, (int)($_GET['page'] ?? 1));
+
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM violations v JOIN students s ON v.student_id=s.id JOIN violation_types vt ON v.violation_type_id=vt.id JOIN users u ON v.reported_by=u.id $where");
+$countStmt->execute($params);
+$totalCount = (int)$countStmt->fetchColumn();
+$totalPages = max(1, (int)ceil($totalCount / $perPage));
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
+
 $stmt = $pdo->prepare("
     SELECT v.*, s.first_name, s.last_name, s.student_number, s.grade_level, s.section,
            vt.name as violation_name, vt.severity, u.full_name as reporter,
@@ -39,9 +50,9 @@ $stmt = $pdo->prepare("
     FROM violations v JOIN students s ON v.student_id=s.id
     JOIN violation_types vt ON v.violation_type_id=vt.id
     JOIN users u ON v.reported_by=u.id
-    $where ORDER BY v.created_at DESC LIMIT 50
+    $where ORDER BY v.created_at DESC LIMIT ? OFFSET ?
 ");
-$stmt->execute($params);
+$stmt->execute(array_merge($params, [$perPage, $offset]));
 $violations = $stmt->fetchAll();
 
 $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='active' ORDER BY name")->fetchAll();
@@ -126,6 +137,21 @@ $violationTypes = $pdo->query("SELECT * FROM violation_types WHERE status='activ
             </tbody>
         </table>
     </div>
+    <?php if ($totalPages > 1): ?>
+    <?php
+    $baseUrl = strtok($_SERVER['REQUEST_URI'], '?');
+    $queryParams = array_filter(['status' => $status, 'search' => $search]);
+    ?>
+    <div class="panel-footer">
+        <nav><ul class="pagination justify-content-center mb-0">
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                <a class="page-link" href="<?= $baseUrl ?>?<?= http_build_query(array_merge($queryParams, ['page' => $i]), '', '&') ?>"><?= $i ?></a>
+            </li>
+            <?php endfor; ?>
+        </ul></nav>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

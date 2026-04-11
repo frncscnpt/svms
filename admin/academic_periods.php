@@ -7,6 +7,7 @@ requireRole('admin');
 
 $pdo = getDBConnection();
 $pageTitle = "Academic Periods";
+$breadcrumbs = ['Dashboard' => '/admin/dashboard.php', 'Academic Periods' => null];
 
 // Handle Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -28,14 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($action === 'add') {
                 $stmt = $pdo->prepare("INSERT INTO academic_periods (name, start_date, end_date, is_active) VALUES (?, ?, ?, ?)");
                 $stmt->execute([$name, $start, $end, $isActive]);
-                $_SESSION['success'] = "Academic Period added successfully.";
+                setFlash('success', 'Academic Period added successfully.');
             } else {
                 $stmt = $pdo->prepare("UPDATE academic_periods SET name = ?, start_date = ?, end_date = ?, is_active = ? WHERE id = ?");
                 $stmt->execute([$name, $start, $end, $isActive, $id]);
-                $_SESSION['success'] = "Academic Period updated successfully.";
+                setFlash('success', 'Academic Period updated successfully.');
             }
         } catch (Exception $e) {
-            $_SESSION['error'] = "Error: " . $e->getMessage();
+            setFlash('danger', 'Error: ' . $e->getMessage());
         }
     } elseif ($action === 'activate') {
         $id = $_POST['id'] ?? null;
@@ -44,9 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->exec("UPDATE academic_periods SET is_active = 0");
                 $stmt = $pdo->prepare("UPDATE academic_periods SET is_active = 1 WHERE id = ?");
                 $stmt->execute([$id]);
-                $_SESSION['success'] = "Academic Period activated.";
+                setFlash('success', 'Academic Period activated.');
             } catch (Exception $e) {
-                $_SESSION['error'] = "Error activating period.";
+                setFlash('danger', 'Error activating period.');
             }
         }
     }
@@ -60,100 +61,73 @@ $periods = $pdo->query("SELECT * FROM academic_periods ORDER BY start_date DESC"
 include __DIR__ . '/../includes/header.php';
 ?>
 
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between align-items-center">
-            <div>
-                <h3 class="fw-bold mb-0">Academic Periods</h3>
-                <p class="text-muted">Manage school years and semesters for historical data tracking</p>
-            </div>
-            <button class="btn btn-primary-custom px-4" data-bs-toggle="modal" data-bs-target="#periodModal" onclick="resetForm()">
-                <i class="bi bi-plus-lg me-2"></i> Create New Period
-            </button>
-        </div>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <p class="text-muted mb-0" style="font-size:13px;">Manage school years and semesters for historical data tracking</p>
+    <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#periodModal" onclick="resetForm()">
+        <i class="bi bi-plus-lg"></i> Create New Period
+    </button>
+</div>
 
-    <?php if (isset($_SESSION['success'])): ?>
-        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i> <?= $_SESSION['success']; unset($_SESSION['success']); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['error'])): ?>
-        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> <?= $_SESSION['error']; unset($_SESSION['error']); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light text-secondary">
-                    <tr>
-                        <th class="ps-4 py-3">Period Name</th>
-                        <th class="py-3">Start Date</th>
-                        <th class="py-3">End Date</th>
-                        <th class="py-3 text-center">Status</th>
-                        <th class="py-3 text-end pe-4">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($periods)): ?>
-                        <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <i class="bi bi-calendar-x text-muted display-1 mb-3 d-block"></i>
-                                <p class="text-muted">No academic periods found. Click "Create New Period" to get started.</p>
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($periods as $p): ?>
-                            <tr>
-                                <td class="ps-4 py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="period-icon text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-                                             style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), #4e1456);">
-                                            <i class="bi bi-calendar-event"></i>
-                                        </div>
-                                        <div>
-                                            <span class="fw-bold d-block"><?= htmlspecialchars($p['name']) ?></span>
-                                            <small class="text-muted">Created <?= date('M d, Y', strtotime($p['created_at'])) ?></small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="py-3"><?= date('F d, Y', strtotime($p['start_date'])) ?></td>
-                                <td class="py-3"><?= date('F d, Y', strtotime($p['end_date'])) ?></td>
-                                <td class="py-3 text-center">
-                                    <?php if ($p['is_active']): ?>
-                                        <span class="badge bg-success py-2 px-3 rounded-pill" style="font-weight:600;">Active</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-light text-muted py-2 px-3 rounded-pill border" style="font-weight:600;">Inactive</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="py-3 text-end pe-4">
-                                    <div class="d-flex justify-content-end gap-2">
-                                        <?php if (!$p['is_active']): ?>
-                                            <form method="POST" class="d-inline">
-                                                <input type="hidden" name="action" value="activate">
-                                                <input type="hidden" name="id" value="<?= $p['id'] ?>">
-                                                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3" title="Set as Active">
-                                                    Set Active
-                                                </button>
-                                            </form>
-                                        <?php endif; ?>
-                                        <button class="btn btn-sm btn-outline-primary-custom rounded-pill px-3" 
-                                                onclick="editPeriod(<?= htmlspecialchars(json_encode($p)) ?>)">
-                                            Edit
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+<div class="card-panel">
+    <div class="data-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Period Name</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($periods)): ?>
+                <tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-calendar-x me-2"></i>No academic periods found</td></tr>
+                <?php else: ?>
+                <?php foreach ($periods as $p): ?>
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar" style="background:linear-gradient(135deg,var(--primary),#4e1456);color:#fff;display:flex;align-items:center;justify-content:center;">
+                                <i class="bi bi-calendar-event"></i>
+                            </div>
+                            <div class="user-info">
+                                <div class="name"><?= sanitize($p['name']) ?></div>
+                                <div class="sub">Created <?= date('M d, Y', strtotime($p['created_at'])) ?></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><small><?= date('M d, Y', strtotime($p['start_date'])) ?></small></td>
+                    <td><small><?= date('M d, Y', strtotime($p['end_date'])) ?></small></td>
+                    <td>
+                        <?php if ($p['is_active']): ?>
+                            <span class="badge badge-soft-success">Active</span>
+                        <?php else: ?>
+                            <span class="badge badge-soft-secondary">Inactive</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="javascript:void(0)" onclick='editPeriod(<?= htmlspecialchars(json_encode($p)) ?>)'><i class="bi bi-pencil"></i> Edit</a></li>
+                                <?php if (!$p['is_active']): ?>
+                                <li>
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="activate">
+                                        <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                                        <button type="submit" class="dropdown-item text-success"><i class="bi bi-check-circle"></i> Set Active</button>
+                                    </form>
+                                </li>
+                                <?php endif; ?>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -201,8 +175,8 @@ include __DIR__ . '/../includes/header.php';
                 </div>
             </div>
             <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-primary-custom rounded-pill px-4">Save Period</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn-primary-custom">Save Period</button>
             </div>
         </form>
     </div>

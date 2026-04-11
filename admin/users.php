@@ -54,17 +54,51 @@ $pageTitle = 'Users';
 $breadcrumbs = ['Dashboard' => '/admin/dashboard.php', 'Users' => null];
 require_once __DIR__ . '/../includes/header.php';
 
-$users = $pdo->query("SELECT * FROM users WHERE status='active' AND role != 'student' ORDER BY created_at DESC")->fetchAll();
+$search = $_GET['search'] ?? '';
+$role = $_GET['role'] ?? '';
+$where = "WHERE status='active' AND role != 'student'";
+$params = [];
+if ($search) { $where .= " AND (full_name LIKE ? OR username LIKE ? OR email LIKE ?)"; $params = array_merge($params, ["%$search%","%$search%","%$search%"]); }
+if ($role) { $where .= " AND role=?"; $params[] = $role; }
+
+$perPage = 10;
+$page = max(1, (int)($_GET['page'] ?? 1));
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM users $where");
+$countStmt->execute($params);
+$total = (int)$countStmt->fetchColumn();
+$totalPages = max(1, (int)ceil($total / $perPage));
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
+
+$stmt = $pdo->prepare("SELECT * FROM users $where ORDER BY created_at DESC LIMIT ? OFFSET ?");
+$stmt->execute(array_merge($params, [$perPage, $offset]));
+$users = $stmt->fetchAll();
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <p class="text-muted mb-0" style="font-size:13px;">Manage system users (Admin, Discipline Officers, Teachers)</p>
-    <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserForm()">
-        <i class="bi bi-plus-lg"></i> Add User
-    </button>
 </div>
 
 <div class="card-panel">
+    <form class="filter-bar d-flex justify-content-between align-items-center" method="GET">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" placeholder="Search by name, username or email..." value="<?= sanitize($search) ?>">
+            </div>
+            <select name="role" class="form-select" style="width:auto">
+                <option value="">All Roles</option>
+                <option value="admin" <?= $role==='admin'?'selected':'' ?>>Administrator</option>
+                <option value="discipline_officer" <?= $role==='discipline_officer'?'selected':'' ?>>Discipline Officer</option>
+                <option value="teacher" <?= $role==='teacher'?'selected':'' ?>>Teacher</option>
+            </select>
+            <button type="submit" class="btn-primary-custom"><i class="bi bi-funnel"></i> Filter</button>
+            <?php if ($search || $role): ?><a href="<?= BASE_PATH ?>/admin/users.php" class="btn btn-outline-secondary btn-sm">Clear</a><?php endif; ?>
+        </div>
+        <button type="button" class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetUserForm()" style="white-space:nowrap;">
+            <i class="bi bi-plus-lg"></i> Add User
+        </button>
+    </form>
     <div class="data-table-wrapper">
         <table class="data-table">
             <thead>
@@ -86,18 +120,38 @@ $users = $pdo->query("SELECT * FROM users WHERE status='active' AND role != 'stu
                     <td><span class="badge bg-primary-custom"><?= ucwords(str_replace('_', ' ', $u['role'])) ?></span></td>
                     <td><small class="text-muted"><?= $u['last_login'] ? formatDateTime($u['last_login']) : 'Never' ?></small></td>
                     <td>
-                        <div class="action-btns">
-                            <button class="action-btn" title="Edit" onclick='editUser(<?= json_encode($u) ?>)'><i class="bi bi-pencil"></i></button>
-                            <?php if ($u['id'] != $_SESSION['user_id']): ?>
-                            <a href="javascript:void(0)" class="action-btn btn-danger" onclick="confirmDelete('/admin/users.php?delete=<?= $u['id'] ?>','<?= sanitize($u['full_name']) ?>')"><i class="bi bi-trash"></i></a>
-                            <?php endif; ?>
+                        <div class="dropdown">
+                            <button class="action-btn" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="javascript:void(0)" onclick='editUser(<?= json_encode($u) ?>)'><i class="bi bi-pencil"></i> Edit</a></li>
+                                <?php if ($u['id'] != $_SESSION['user_id']): ?>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmDelete('/admin/users.php?delete=<?= $u['id'] ?>','<?= sanitize($u['full_name']) ?>')"><i class="bi bi-trash"></i> Delete</a></li>
+                                <?php endif; ?>
+                            </ul>
                         </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
+                <?php if (empty($users)): ?><tr><td colspan="5" class="text-center text-muted py-4">No users found</td></tr><?php endif; ?>
             </tbody>
         </table>
     </div>
+    <?php if ($totalPages > 1): ?>
+    <?php
+    $baseUrl = strtok($_SERVER['REQUEST_URI'], '?');
+    $qp = array_filter(['search' => $search, 'role' => $role]);
+    ?>
+    <div class="panel-footer">
+        <nav><ul class="pagination justify-content-center mb-0">
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <li class="page-item <?= $i == $page ? 'active' : '' ?>">
+                <a class="page-link" href="<?= $baseUrl ?>?<?= http_build_query(array_merge($qp, ['page' => $i]), '', '&') ?>"><?= $i ?></a>
+            </li>
+            <?php endfor; ?>
+        </ul></nav>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- User Modal -->

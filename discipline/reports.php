@@ -137,7 +137,11 @@ $recordsResult = paginate(
             </tbody>
         </table>
     </div>
-    <?= renderPagination($recordsResult, '?from='.$dateFrom.'&to='.$dateTo) ?>
+    <?php if ($recordsResult['total_pages'] > 1): ?>
+    <div class="panel-footer">
+        <?= renderPagination($recordsResult, '?from='.$dateFrom.'&to='.$dateTo) ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

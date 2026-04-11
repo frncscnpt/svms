@@ -283,7 +283,11 @@ function toggleDateFilter(select) {
             </tbody>
         </table>
     </div>
-    <?= renderPagination($recordsResult, '?type='.$reportType.'&from='.$dateFrom.'&to='.$dateTo.'&grade='.urlencode($gradeFilter)) ?>
+    <?php if ($recordsResult['total_pages'] > 1): ?>
+    <div class="panel-footer">
+        <?= renderPagination($recordsResult, '?type='.$reportType.'&from='.$dateFrom.'&to='.$dateTo.'&grade='.urlencode($gradeFilter)) ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
