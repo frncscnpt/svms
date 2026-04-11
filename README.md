@@ -157,5 +157,5 @@ This project is for educational purposes only.
 
 For questions or collaboration:
 - Email: jf.canapati@gmail.com
-- GitHub: https://github.com/frncscnpt
+- GitHub: https://github.com/jf-canapati
 - LinkedIn: https://www.linkedin.com/in/jf-canapati
