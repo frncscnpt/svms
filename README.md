@@ -124,7 +124,7 @@ svms/
 ## Authors / Contributors
 
 **John Francis B. Canapati**  
-Full-stack Developer | Fresh Graduate
+Software Developer | Fresh Graduate
 
 **Claire Jessica S. Cruz**  
 UI/UX Designer
